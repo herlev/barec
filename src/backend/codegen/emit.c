@@ -28,7 +28,7 @@ static const char *const PRIMITIVE_CTYPE[] = {
     [TypeKind_BOOL] = "bool",
 };
 
-static void emit_indent(StrBuf *out, int indent) {
+void codegen_indent(StrBuf *out, int indent) {
   for (int i = 0; i < indent; i++) {
     strbuf_append_char(out, ' ');
   }
@@ -38,11 +38,11 @@ void codegen_emit_member(Gen *g, const Type *t, const char *name, const char *di
   StrBuf *out = g->out;
   switch (t->kind) {
   case TypeKind_STR:
-    emit_indent(out, indent);
+    codegen_indent(out, indent);
     strbuf_appendf(out, "BareStr%" PRIu32 " %s%s;\n", codegen_cap_of(g, t), name, dims);
     break;
   case TypeKind_DATA:
-    emit_indent(out, indent);
+    codegen_indent(out, indent);
     if (t->data.length.has_value) {
       strbuf_appendf(out, "uint8_t %s%s[%" PRIu64 "];\n", name, dims, t->data.length.value);
     } else {
@@ -51,7 +51,7 @@ void codegen_emit_member(Gen *g, const Type *t, const char *name, const char *di
     break;
   case TypeKind_USER: {
     char *ref = codegen_render_ident(g->cfg, t->user.name, g->cfg->type_case, true);
-    emit_indent(out, indent);
+    codegen_indent(out, indent);
     strbuf_appendf(out, "%s %s%s;\n", ref, name, dims);
     free(ref);
     break;
@@ -59,16 +59,16 @@ void codegen_emit_member(Gen *g, const Type *t, const char *name, const char *di
   case TypeKind_ENUM:
   case TypeKind_STRUCT:
   case TypeKind_UNION:
-    emit_indent(out, indent);
+    codegen_indent(out, indent);
     strbuf_appendf(out, "%s %s%s;\n", codegen_name_of(g, t), name, dims);
     break;
   case TypeKind_OPTIONAL:
-    emit_indent(out, indent);
+    codegen_indent(out, indent);
     strbuf_append(out, "struct {\n");
-    emit_indent(out, indent + 2);
+    codegen_indent(out, indent + 2);
     strbuf_append(out, "bool has_value;\n");
     codegen_emit_member(g, t->optional.inner, "value", "", indent + 2);
-    emit_indent(out, indent);
+    codegen_indent(out, indent);
     strbuf_appendf(out, "} %s%s;\n", name, dims);
     break;
   case TypeKind_LIST:
@@ -80,34 +80,34 @@ void codegen_emit_member(Gen *g, const Type *t, const char *name, const char *di
     } else {
       StrBuf idims = {};
       strbuf_appendf(&idims, "[%" PRIu32 "]", codegen_cap_of(g, t));
-      emit_indent(out, indent);
+      codegen_indent(out, indent);
       strbuf_append(out, "struct {\n");
       codegen_emit_member(g, t->list.elem, "items", idims.data, indent + 2);
-      emit_indent(out, indent + 2);
+      codegen_indent(out, indent + 2);
       strbuf_append(out, "uint32_t len;\n");
-      emit_indent(out, indent);
+      codegen_indent(out, indent);
       strbuf_appendf(out, "} %s%s;\n", name, dims);
       strbuf_free(&idims);
     }
     break;
   case TypeKind_MAP:
-    emit_indent(out, indent);
+    codegen_indent(out, indent);
     strbuf_append(out, "struct {\n");
-    emit_indent(out, indent + 2);
+    codegen_indent(out, indent + 2);
     strbuf_append(out, "struct {\n");
     codegen_emit_member(g, t->map.key, "key", "", indent + 4);
     codegen_emit_member(g, t->map.value, "value", "", indent + 4);
-    emit_indent(out, indent + 2);
+    codegen_indent(out, indent + 2);
     strbuf_appendf(out, "} entries[%" PRIu32 "];\n", codegen_cap_of(g, t));
-    emit_indent(out, indent + 2);
+    codegen_indent(out, indent + 2);
     strbuf_append(out, "uint32_t len;\n");
-    emit_indent(out, indent);
+    codegen_indent(out, indent);
     strbuf_appendf(out, "} %s%s;\n", name, dims);
     break;
   case TypeKind_VOID:
     UNREACHABLE();
   default:
-    emit_indent(out, indent);
+    codegen_indent(out, indent);
     strbuf_appendf(out, "%s %s%s;\n", PRIMITIVE_CTYPE[t->kind], name, dims);
     break;
   }
@@ -126,7 +126,7 @@ static const char *smallest_uint(u64 max) {
   return "uint64_t";
 }
 
-static char *render_variant(const Gen *g, const char *type_cname, Str raw) {
+char *codegen_render_variant(const Gen *g, const char *type_cname, Str raw) {
   StrBuf out = {};
   switch (g->cfg->enum_variant_style) {
   case EnumVariantStyle_TYPE_UPPER:
@@ -164,7 +164,7 @@ static void emit_enum_def(Gen *g, const char *cname, const EnumEntry entries[], 
   if (g->cfg->std == CStd_C23) {
     strbuf_appendf(out, "typedef enum : %s {\n", base);
     for (size_t i = 0; i < n; i++) {
-      char *variant = render_variant(g, cname, entries[i].raw);
+      char *variant = codegen_render_variant(g, cname, entries[i].raw);
       strbuf_appendf(out, "  %s = %" PRIu64 ",\n", variant, entries[i].value);
       free(variant);
     }
@@ -173,7 +173,7 @@ static void emit_enum_def(Gen *g, const char *cname, const EnumEntry entries[], 
     strbuf_appendf(out, "typedef %s %s;\n", base, cname);
     strbuf_append(out, "enum {\n");
     for (size_t i = 0; i < n; i++) {
-      char *variant = render_variant(g, cname, entries[i].raw);
+      char *variant = codegen_render_variant(g, cname, entries[i].raw);
       strbuf_appendf(out, "  %s = %" PRIu64 ",\n", variant, entries[i].value);
       free(variant);
     }
@@ -181,7 +181,7 @@ static void emit_enum_def(Gen *g, const char *cname, const EnumEntry entries[], 
   } else {
     strbuf_appendf(out, "typedef %s %s;\n", base, cname);
     for (size_t i = 0; i < n; i++) {
-      char *variant = render_variant(g, cname, entries[i].raw);
+      char *variant = codegen_render_variant(g, cname, entries[i].raw);
       strbuf_appendf(out, "#define %s UINT64_C(%" PRIu64 ")\n", variant, entries[i].value);
       free(variant);
     }

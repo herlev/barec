@@ -54,3 +54,14 @@ char *codegen_render_ident_cstr(const Config *cfg, const char *raw, CaseStyle st
                                 bool with_prefix) {
   return codegen_render_ident(cfg, (Str){.data = raw, .len = strlen(raw)}, style, with_prefix);
 }
+
+char *codegen_type_fn_name(const Gen *g, const char *cname, const char *op) {
+  StrBuf raw = {};
+  strbuf_append(&raw, cname);
+  strbuf_append_char(&raw, '_');
+  strbuf_append(&raw, op);
+  char *name = codegen_render_ident(g->cfg, (Str){.data = raw.data, .len = raw.len},
+                                    g->cfg->function_case, false);
+  strbuf_free(&raw);
+  return name;
+}

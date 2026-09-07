@@ -55,6 +55,17 @@ char *codegen_render_ident(const Config *cfg, Str raw, CaseStyle style, bool wit
 char *codegen_render_ident_cstr(const Config *cfg, const char *raw, CaseStyle style,
                                 bool with_prefix);
 
+/// Function name for a generated type, derived from its C name so prefix
+/// and casing carry over, e.g. ("AcmeCustomer", "read") -> acme_customer_read.
+char *codegen_type_fn_name(const Gen *g, const char *cname, const char *op);
+
+/// Enum variant name for a value raw name under the configured style.
+char *codegen_render_variant(const Gen *g, const char *type_cname, Str raw);
+
+/// The BARE spelling of a type kind (u8, str, list, ...), used for runtime
+/// function suffixes and union member base names.
+const char *codegen_bare_type_name(TypeKind kind);
+
 /// Walks a user type assigning derived names and resolving caps, keyed by
 /// the dotted override path rooted at the user type's name.
 void codegen_scan_type(Gen *g, const Type *t, StrBuf *path);
@@ -75,3 +86,13 @@ void codegen_emit_derived_defs(Gen *g, const Type *t, bool is_root);
 
 void codegen_emit_root_def(Gen *g, const UserType *ut, const char *cname);
 void codegen_emit_shared_typedefs(Gen *g);
+void codegen_indent(StrBuf *out, int indent);
+
+/// Emit a complete read/write function definition for a named type. Derived
+/// helper functions are static, root functions match the header decls.
+void codegen_emit_read_fn(Gen *g, const Type *t, const char *cname, bool is_public);
+void codegen_emit_write_fn(Gen *g, const Type *t, const char *cname, bool is_public);
+
+/// Emits the whole generated source file into g->out: derived helpers in
+/// post-order, then read/write/decode/encode per user type.
+void codegen_emit_source_content(Gen *g, char *const root_names[], const char *basename);

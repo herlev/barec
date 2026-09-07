@@ -18,6 +18,10 @@ static const char GOLDEN_HEADER[] = {
 #embed "golden/example_default.h"
     , '\0'};
 
+static const char GOLDEN_SOURCE[] = {
+#embed "golden/example_default.c"
+    , '\0'};
+
 typedef struct {
   StrBuf header;
   StrBuf source;
@@ -57,7 +61,28 @@ static void test_golden_default(void) {
   Generated gen = generate_ok(EXAMPLE_SCHEMA, &cfg);
   assert(gen.header.len == strlen(GOLDEN_HEADER));
   assert(memcmp(gen.header.data, GOLDEN_HEADER, gen.header.len) == 0);
-  assert(strstr(gen.source.data, "#include \"example.h\"") != nullptr);
+  assert(gen.source.len == strlen(GOLDEN_SOURCE));
+  assert(memcmp(gen.source.data, GOLDEN_SOURCE, gen.source.len) == 0);
+  free_generated(&gen);
+}
+
+static void test_function_bodies(void) {
+  Config cfg = config_default();
+  Generated gen = generate_ok("type E enum {A B = 9}\n"
+                              "type O optional<E>\n"
+                              "type M map<str><u8>\n"
+                              "type U union {E | void}",
+                              &cfg);
+  assert(strstr(gen.source.data, "case 9:\n    break;\n  default:\n"
+                                 "    return BareStatus_INVALID_ENUM;") != nullptr);
+  assert(strstr(gen.source.data, "*out = (E)raw;") != nullptr);
+  assert(strstr(gen.source.data, "return BareStatus_INVALID_OPTIONAL;") != nullptr);
+  assert(strstr(gen.source.data, "return BareStatus_DUPLICATE_KEY;") != nullptr);
+  assert(strstr(gen.source.data, "memcmp(out->entries[j0].key.data, out->entries[i0].key.data") !=
+         nullptr);
+  assert(strstr(gen.source.data, "case UTag_VOID:\n    BARE_TRY(bare_write_uint(w, 1));\n"
+                                 "    break;") != nullptr);
+  assert(strstr(gen.source.data, "return BareStatus_INVALID_TAG;") != nullptr);
   free_generated(&gen);
 }
 
@@ -155,6 +180,7 @@ static void test_name_collision(void) {
 
 int main(void) {
   test_golden_default();
+  test_function_bodies();
   test_c99_mode();
   test_c99_large_enum();
   test_cap_overrides();

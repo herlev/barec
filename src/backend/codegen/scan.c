@@ -9,6 +9,7 @@
 
 #include <inttypes.h>
 #include <stddef.h>
+#include <stdlib.h>
 #include <string.h>
 
 static const char *const BARE_TYPE_NAME[] = {
@@ -21,6 +22,8 @@ static const char *const BARE_TYPE_NAME[] = {
     [TypeKind_LIST] = "list",     [TypeKind_MAP] = "map",   [TypeKind_UNION] = "union",
     [TypeKind_STRUCT] = "struct", [TypeKind_USER] = "user",
 };
+
+const char *codegen_bare_type_name(TypeKind kind) { return BARE_TYPE_NAME[kind]; }
 
 const char *codegen_name_of(const Gen *g, const Type *t) {
   for (size_t i = 0; i < g->names.len; i++) {

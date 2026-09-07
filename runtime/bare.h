@@ -16,6 +16,16 @@
 #endif
 #endif
 
+/// Evaluates a BareStatus expression and returns it from the enclosing
+/// function unless it is BareStatus_OK.
+#define BARE_TRY(expr)                                                                             \
+  do {                                                                                             \
+    BareStatus bare_try_status_ = (expr);                                                          \
+    if (bare_try_status_ != BareStatus_OK) {                                                       \
+      return bare_try_status_;                                                                     \
+    }                                                                                              \
+  } while (0)
+
 typedef enum BARE_ENUM_U8 {
   BareStatus_OK,
   BareStatus_SHORT_READ,
