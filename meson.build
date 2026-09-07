@@ -52,61 +52,27 @@ barec = executable(
   ],
 )
 
-test_runtime = executable(
-  'test_runtime',
-  'tests/test_runtime.c',
-  include_directories: runtime_inc,
-  link_with: bare_runtime,
+test(
+  'runtime',
+  executable(
+    'test_runtime',
+    'tests/test_runtime.c',
+    include_directories: runtime_inc,
+    link_with: bare_runtime,
+  ),
 )
-test('runtime', test_runtime)
 
-test_lexer = executable(
-  'test_lexer',
-  'tests/test_lexer.c',
-  include_directories: src_inc,
-  link_with: barec_lib,
-)
-test('lexer', test_lexer)
-
-test_parser = executable(
-  'test_parser',
-  'tests/test_parser.c',
-  include_directories: src_inc,
-  link_with: barec_lib,
-)
-test('parser', test_parser)
-
-test_check = executable(
-  'test_check',
-  'tests/test_check.c',
-  include_directories: src_inc,
-  link_with: barec_lib,
-)
-test('check', test_check)
-
-test_config = executable(
-  'test_config',
-  'tests/test_config.c',
-  include_directories: src_inc,
-  link_with: barec_lib,
-)
-test('config', test_config)
-
-test_names = executable(
-  'test_names',
-  'tests/test_names.c',
-  include_directories: src_inc,
-  link_with: barec_lib,
-)
-test('names', test_names)
-
-test_codegen = executable(
-  'test_codegen',
-  'tests/test_codegen.c',
-  include_directories: src_inc,
-  link_with: barec_lib,
-)
-test('codegen', test_codegen)
+foreach name : ['lexer', 'parser', 'check', 'config', 'names', 'codegen']
+  test(
+    name,
+    executable(
+      'test_' + name,
+      'tests/test_' + name + '.c',
+      include_directories: src_inc,
+      link_with: barec_lib,
+    ),
+  )
+endforeach
 
 test('cli', find_program('tests/cli.sh'), args: [barec])
 
@@ -117,13 +83,15 @@ example_gen = custom_target(
   command: [barec, 'generate', '@INPUT@', '-o', '@OUTDIR@', '-n', 'example'],
 )
 
-test_e2e = executable(
-  'test_e2e',
-  ['tests/test_e2e.c', example_gen[1]],
-  include_directories: runtime_inc,
-  link_with: bare_runtime,
+test(
+  'e2e',
+  executable(
+    'test_e2e',
+    ['tests/test_e2e.c', example_gen[1]],
+    include_directories: runtime_inc,
+    link_with: bare_runtime,
+  ),
 )
-test('e2e', test_e2e)
 
 example99_gen = custom_target(
   'example99-gen',
@@ -132,7 +100,7 @@ example99_gen = custom_target(
   command: [barec, 'generate', '@INPUT@', '-o', '@OUTDIR@', '-n', 'example99', '--std', 'c99'],
 )
 
-example99_lib = static_library(
+static_library(
   'example99',
   example99_gen[1],
   include_directories: runtime_inc,
@@ -146,10 +114,12 @@ protocol_gen = custom_target(
   command: [barec, 'generate', '@INPUT@', '-o', '@OUTDIR@', '-n', 'protocol'],
 )
 
-example_protocol = executable(
-  'example-protocol',
-  ['examples/main.c', protocol_gen[1]],
-  include_directories: runtime_inc,
-  link_with: bare_runtime,
+test(
+  'example',
+  executable(
+    'example-protocol',
+    ['examples/main.c', protocol_gen[1]],
+    include_directories: runtime_inc,
+    link_with: bare_runtime,
+  ),
 )
-test('example', example_protocol)
