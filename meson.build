@@ -31,13 +31,13 @@ barec = executable(
   link_with: barec_lib,
 )
 
-test_smoke = executable(
-  'test_smoke',
-  'tests/test_smoke.c',
-  include_directories: [src_inc, runtime_inc],
+test_runtime = executable(
+  'test_runtime',
+  'tests/test_runtime.c',
+  include_directories: runtime_inc,
   link_with: bare_runtime,
 )
-test('smoke', test_smoke)
+test('runtime', test_runtime)
 
 test_lexer = executable(
   'test_lexer',
