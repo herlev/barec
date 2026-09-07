@@ -12,6 +12,9 @@ test: build
 run *args: build
     ./build/barec {{args}}
 
+install: build
+    meson install -C build
+
 snapshots: build
     UPDATE_SNAPSHOTS=1 sh tests/snapshot.sh ./build/barec
 

@@ -55,6 +55,7 @@ barec = executable(
     '-DBAREC_VERSION="@0@"'.format(meson.project_version()),
     '--embed-dir=' + meson.project_source_root() / 'runtime',
   ],
+  install: true,
 )
 
 test(

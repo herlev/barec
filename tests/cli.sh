@@ -9,7 +9,8 @@ trap 'rm -rf "$TMP"' EXIT
 "$BAREC" --version | grep -q "^barec "
 "$BAREC" -V > /dev/null
 
-if "$BAREC" 2> /dev/null; then exit 1; fi
+"$BAREC" 2>&1 >/dev/null | grep -q "^Usage:"
+if "$BAREC" > /dev/null 2>&1; then exit 1; fi
 if "$BAREC" --bogus 2> /dev/null; then exit 1; fi
 if "$BAREC" generate 2> /dev/null; then exit 1; fi
 if "$BAREC" generate a.bare b.bare 2> /dev/null; then exit 1; fi
