@@ -9,6 +9,9 @@ build:
 test: build
     meson test -C build --print-errorlogs
 
+run *args: build
+    ./build/barec {{args}}
+
 fmt:
     ninja -C build clang-format
 

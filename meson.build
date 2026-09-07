@@ -36,9 +36,20 @@ barec_lib = static_library(
 
 barec = executable(
   'barec',
-  'src/main.c',
+  [
+    'src/cli/cli.c',
+    'src/cli/cmd/check.c',
+    'src/cli/cmd/common.c',
+    'src/cli/cmd/config.c',
+    'src/cli/cmd/generate.c',
+    'src/main.c',
+  ],
   include_directories: src_inc,
   link_with: barec_lib,
+  c_args: [
+    '-DBAREC_VERSION="@0@"'.format(meson.project_version()),
+    '--embed-dir=' + meson.project_source_root() / 'runtime',
+  ],
 )
 
 test_runtime = executable(
@@ -96,3 +107,5 @@ test_codegen = executable(
   link_with: barec_lib,
 )
 test('codegen', test_codegen)
+
+test('cli', find_program('tests/cli.sh'), args: [barec])
