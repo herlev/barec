@@ -136,33 +136,12 @@ static void test_errors(void) {
   assert(diag.loc.line == 1 && diag.loc.column == 2);
 }
 
+static const char EXAMPLE_SCHEMA[] = {
+#embed "example.bare"
+    , '\0'};
+
 static void test_example_schema(void) {
-  const char *schema = "type PublicKey data[128]\n"
-                       "type Time str # ISO 8601\n"
-                       "\n"
-                       "type Department enum {\n"
-                       "  ACCOUNTING\n"
-                       "  ADMINISTRATION\n"
-                       "  CUSTOMER_SERVICE\n"
-                       "  DEVELOPMENT\n"
-                       "\n"
-                       "  # Reserved for the CEO\n"
-                       "  JSMITH = 99\n"
-                       "}\n"
-                       "\n"
-                       "type Address list<str>[4] # street, city, state, country\n"
-                       "\n"
-                       "type Customer struct {\n"
-                       "  name: str\n"
-                       "  email: str\n"
-                       "  address: Address\n"
-                       "  orders: list<struct {\n"
-                       "    orderId: i64\n"
-                       "    quantity: i32\n"
-                       "  }>\n"
-                       "  metadata: map<str><data>\n"
-                       "}\n";
-  TokenList list = lex_ok(schema);
+  TokenList list = lex_ok(EXAMPLE_SCHEMA);
   assert(list.len > 50);
   assert(list.tokens[0].kind == TokenKind_KW_TYPE);
   assert(list.tokens[list.len - 1].kind == TokenKind_EOF);

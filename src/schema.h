@@ -105,4 +105,5 @@ typedef struct {
   size_t len;
 } Schema;
 
+void type_free(Type *type);
 void schema_free(Schema *schema);
