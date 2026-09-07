@@ -6,9 +6,10 @@ Checks: >
   readability-*,
   -bugprone-easily-swappable-parameters,
   -clang-analyzer-security.insecureAPI.DeprecatedOrUnsafeBufferHandling,
-  -misc-include-cleaner,
+  -clang-analyzer-security.VAList,
   -readability-identifier-length,
-  -readability-magic-numbers,
-  -readability-function-cognitive-complexity
+  -readability-magic-numbers
 WarningsAsErrors: '*'
+CheckOptions:
+  - { key: readability-function-cognitive-complexity.IgnoreMacros, value: true }
 HeaderFilterRegex: '(src|runtime)/.*\.h$'

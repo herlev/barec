@@ -1,5 +1,8 @@
 #include "bare.h"
 
+#include <stddef.h>
+#include <stdint.h>
+
 BareReader bare_reader_new(const uint8_t data[], size_t len) {
   return (BareReader){.data = data, .len = len, .pos = 0};
 }

@@ -12,10 +12,17 @@ runtime_inc = include_directories('runtime')
 
 bare_runtime = static_library('bare', 'runtime/bare.c')
 
+barec_lib = static_library(
+  'barec_lib',
+  ['src/diag.c', 'src/lexer.c'],
+  include_directories: src_inc,
+)
+
 barec = executable(
   'barec',
   'src/main.c',
   include_directories: src_inc,
+  link_with: barec_lib,
 )
 
 test_smoke = executable(
@@ -25,3 +32,11 @@ test_smoke = executable(
   link_with: bare_runtime,
 )
 test('smoke', test_smoke)
+
+test_lexer = executable(
+  'test_lexer',
+  'tests/test_lexer.c',
+  include_directories: src_inc,
+  link_with: barec_lib,
+)
+test('lexer', test_lexer)

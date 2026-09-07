@@ -2,6 +2,7 @@
 #include "macros.h"
 
 #include <assert.h>
+#include <stdint.h>
 
 int main(void) {
   uint8_t buf[4] = {};
