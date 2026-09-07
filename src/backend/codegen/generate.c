@@ -147,6 +147,14 @@ static void gen_free(Gen *g, char *root_names[]) {
   free(g->str_caps.ptr);
   free(g->data_caps.ptr);
   free(g->override_used);
+  free(g->members.has_value);
+  free(g->members.value);
+  free(g->members.items);
+  free(g->members.len);
+  free(g->members.entries);
+  free(g->members.key);
+  free(g->members.tag);
+  free(g->members.data);
 }
 
 bool codegen_generate(const Schema *schema, const Config *cfg, const char *basename, StrBuf *header,
@@ -157,6 +165,14 @@ bool codegen_generate(const Schema *schema, const Config *cfg, const char *basen
   if (g.override_used == nullptr) {
     abort();
   }
+  g.members.has_value = codegen_render_ident_cstr(cfg, "has_value", cfg->field_case, false);
+  g.members.value = codegen_render_ident_cstr(cfg, "value", cfg->field_case, false);
+  g.members.items = codegen_render_ident_cstr(cfg, "items", cfg->field_case, false);
+  g.members.len = codegen_render_ident_cstr(cfg, "len", cfg->field_case, false);
+  g.members.entries = codegen_render_ident_cstr(cfg, "entries", cfg->field_case, false);
+  g.members.key = codegen_render_ident_cstr(cfg, "key", cfg->field_case, false);
+  g.members.tag = codegen_render_ident_cstr(cfg, "tag", cfg->field_case, false);
+  g.members.data = codegen_render_ident_cstr(cfg, "data", cfg->field_case, false);
   StrBuf path = {};
   for (size_t i = 0; i < schema->len; i++) {
     path.len = 0;

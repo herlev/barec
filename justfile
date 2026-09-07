@@ -12,6 +12,9 @@ test: build
 run *args: build
     ./build/barec {{args}}
 
+snapshots: build
+    UPDATE_SNAPSHOTS=1 sh tests/snapshot.sh ./build/barec
+
 fmt:
     ninja -C build clang-format
 

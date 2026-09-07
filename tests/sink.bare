@@ -1,0 +1,27 @@
+type Id u64
+type Alias Id
+type Mode enum {
+  OFF
+  ON = 10
+  TURBO = 300
+}
+type Blob data[4]
+type Matrix list<list<u8>[3]>[2]
+
+type Packet struct {
+  kind: enum { A B }
+  pos: struct {
+    x: f32
+    y: f32
+  }
+  choice: union { u32 | struct { a: u8 } | data | data[2] }
+  grid: Matrix
+  rows: list<list<u16>>
+  tags: optional<list<str>>
+  fp: optional<data[16]>
+  by_mode: map<Mode><u32>
+  by_blob: map<Blob><str>
+  by_id: map<Alias><bool>
+  fixed_blobs: list<data[8]>[2]
+  maybe: optional<Alias>
+}

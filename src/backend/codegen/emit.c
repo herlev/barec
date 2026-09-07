@@ -66,8 +66,8 @@ void codegen_emit_member(Gen *g, const Type *t, const char *name, const char *di
     codegen_indent(out, indent);
     strbuf_append(out, "struct {\n");
     codegen_indent(out, indent + 2);
-    strbuf_append(out, "bool has_value;\n");
-    codegen_emit_member(g, t->optional.inner, "value", "", indent + 2);
+    strbuf_appendf(out, "bool %s;\n", g->members.has_value);
+    codegen_emit_member(g, t->optional.inner, g->members.value, "", indent + 2);
     codegen_indent(out, indent);
     strbuf_appendf(out, "} %s%s;\n", name, dims);
     break;
@@ -82,9 +82,9 @@ void codegen_emit_member(Gen *g, const Type *t, const char *name, const char *di
       strbuf_appendf(&idims, "[%" PRIu32 "]", codegen_cap_of(g, t));
       codegen_indent(out, indent);
       strbuf_append(out, "struct {\n");
-      codegen_emit_member(g, t->list.elem, "items", idims.data, indent + 2);
+      codegen_emit_member(g, t->list.elem, g->members.items, idims.data, indent + 2);
       codegen_indent(out, indent + 2);
-      strbuf_append(out, "uint32_t len;\n");
+      strbuf_appendf(out, "uint32_t %s;\n", g->members.len);
       codegen_indent(out, indent);
       strbuf_appendf(out, "} %s%s;\n", name, dims);
       strbuf_free(&idims);
@@ -95,12 +95,12 @@ void codegen_emit_member(Gen *g, const Type *t, const char *name, const char *di
     strbuf_append(out, "struct {\n");
     codegen_indent(out, indent + 2);
     strbuf_append(out, "struct {\n");
-    codegen_emit_member(g, t->map.key, "key", "", indent + 4);
-    codegen_emit_member(g, t->map.value, "value", "", indent + 4);
+    codegen_emit_member(g, t->map.key, g->members.key, "", indent + 4);
+    codegen_emit_member(g, t->map.value, g->members.value, "", indent + 4);
     codegen_indent(out, indent + 2);
-    strbuf_appendf(out, "} entries[%" PRIu32 "];\n", codegen_cap_of(g, t));
+    strbuf_appendf(out, "} %s[%" PRIu32 "];\n", g->members.entries, codegen_cap_of(g, t));
     codegen_indent(out, indent + 2);
-    strbuf_append(out, "uint32_t len;\n");
+    strbuf_appendf(out, "uint32_t %s;\n", g->members.len);
     codegen_indent(out, indent);
     strbuf_appendf(out, "} %s%s;\n", name, dims);
     break;
@@ -233,7 +233,7 @@ static void emit_union_def(Gen *g, const Type *t) {
   emit_enum_def(g, tag_cname, entries, n);
   free(entries);
   strbuf_append(out, "typedef struct {\n");
-  strbuf_appendf(out, "  %s tag;\n", tag_cname);
+  strbuf_appendf(out, "  %s %s;\n", tag_cname, g->members.tag);
   bool any_value = false;
   for (size_t i = 0; i < n; i++) {
     if (type_underlying(t->union_members.members[i].type)->kind != TypeKind_VOID) {
@@ -251,7 +251,7 @@ static void emit_union_def(Gen *g, const Type *t) {
       codegen_emit_member(g, mt, arm, "", 4);
       free(arm);
     }
-    strbuf_append(out, "  } value;\n");
+    strbuf_appendf(out, "  } %s;\n", g->members.value);
   }
   strbuf_appendf(out, "} %s;\n\n", codegen_name_of(g, t));
 }
@@ -309,8 +309,8 @@ void codegen_emit_root_def(Gen *g, const UserType *ut, const char *cname) {
     break;
   case TypeKind_DATA:
     if (t->data.length.has_value) {
-      strbuf_appendf(out, "typedef struct {\n  uint8_t data[%" PRIu64 "];\n} %s;\n\n",
-                     t->data.length.value, cname);
+      strbuf_appendf(out, "typedef struct {\n  uint8_t %s[%" PRIu64 "];\n} %s;\n\n",
+                     g->members.data, t->data.length.value, cname);
     } else {
       strbuf_appendf(out, "typedef BareData%" PRIu32 " %s;\n\n", codegen_cap_of(g, t), cname);
     }
@@ -325,8 +325,8 @@ void codegen_emit_root_def(Gen *g, const UserType *ut, const char *cname) {
     emit_union_def(g, t);
     break;
   case TypeKind_OPTIONAL:
-    strbuf_append(out, "typedef struct {\n  bool has_value;\n");
-    codegen_emit_member(g, t->optional.inner, "value", "", 2);
+    strbuf_appendf(out, "typedef struct {\n  bool %s;\n", g->members.has_value);
+    codegen_emit_member(g, t->optional.inner, g->members.value, "", 2);
     strbuf_appendf(out, "} %s;\n\n", cname);
     break;
   case TypeKind_LIST:
@@ -334,22 +334,23 @@ void codegen_emit_root_def(Gen *g, const UserType *ut, const char *cname) {
     if (t->list.length.has_value) {
       StrBuf dims = {};
       strbuf_appendf(&dims, "[%" PRIu64 "]", t->list.length.value);
-      codegen_emit_member(g, t->list.elem, "items", dims.data, 2);
+      codegen_emit_member(g, t->list.elem, g->members.items, dims.data, 2);
       strbuf_free(&dims);
     } else {
       StrBuf dims = {};
       strbuf_appendf(&dims, "[%" PRIu32 "]", codegen_cap_of(g, t));
-      codegen_emit_member(g, t->list.elem, "items", dims.data, 2);
+      codegen_emit_member(g, t->list.elem, g->members.items, dims.data, 2);
       strbuf_free(&dims);
-      strbuf_append(out, "  uint32_t len;\n");
+      strbuf_appendf(out, "  uint32_t %s;\n", g->members.len);
     }
     strbuf_appendf(out, "} %s;\n\n", cname);
     break;
   case TypeKind_MAP:
     strbuf_append(out, "typedef struct {\n  struct {\n");
-    codegen_emit_member(g, t->map.key, "key", "", 4);
-    codegen_emit_member(g, t->map.value, "value", "", 4);
-    strbuf_appendf(out, "  } entries[%" PRIu32 "];\n  uint32_t len;\n", codegen_cap_of(g, t));
+    codegen_emit_member(g, t->map.key, g->members.key, "", 4);
+    codegen_emit_member(g, t->map.value, g->members.value, "", 4);
+    strbuf_appendf(out, "  } %s[%" PRIu32 "];\n  uint32_t %s;\n", g->members.entries,
+                   codegen_cap_of(g, t), g->members.len);
     strbuf_appendf(out, "} %s;\n\n", cname);
     break;
   case TypeKind_VOID:

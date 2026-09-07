@@ -89,13 +89,19 @@ static void emit_read_list_var(Gen *g, const Type *elem, const char *items_expr,
   strbuf_append(out, "}\n");
 }
 
-static void emit_key_equal(const Type *key, const char *a, const char *b, StrBuf *out) {
+static void emit_key_equal(const Gen *g, const Type *key, const char *a, const char *b,
+                           StrBuf *out) {
   const Type *k = type_underlying(key);
   switch (k->kind) {
   case TypeKind_STR:
   case TypeKind_DATA:
     if (k->kind == TypeKind_DATA && k->data.length.has_value) {
-      strbuf_appendf(out, "memcmp(%s, %s, %" PRIu64 ") == 0", a, b, k->data.length.value);
+      if (key->kind == TypeKind_DATA) {
+        strbuf_appendf(out, "memcmp(%s, %s, %" PRIu64 ") == 0", a, b, k->data.length.value);
+      } else {
+        strbuf_appendf(out, "memcmp(%s.%s, %s.%s, %" PRIu64 ") == 0", a, g->members.data, b,
+                       g->members.data, k->data.length.value);
+      }
     } else {
       strbuf_appendf(out, "%s.len == %s.len && memcmp(%s.data, %s.data, %s.len) == 0", a, b, a, b,
                      a);
@@ -127,17 +133,17 @@ static void emit_read_map(Gen *g, const Type *key, const Type *value, const char
   codegen_indent(out, indent + 2);
   strbuf_appendf(out, "for (uint32_t i%d = 0; i%d < %s; i%d++) {\n", depth, depth, len_expr, depth);
   StrBuf key_expr = {};
-  strbuf_appendf(&key_expr, "%s[i%d].key", entries_expr, depth);
+  strbuf_appendf(&key_expr, "%s[i%d].%s", entries_expr, depth, g->members.key);
   StrBuf value_expr = {};
-  strbuf_appendf(&value_expr, "%s[i%d].value", entries_expr, depth);
+  strbuf_appendf(&value_expr, "%s[i%d].%s", entries_expr, depth, g->members.value);
   emit_read_step(g, key, key_expr.data, indent + 4, depth + 1);
   emit_read_step(g, value, value_expr.data, indent + 4, depth + 1);
   codegen_indent(out, indent + 4);
   strbuf_appendf(out, "for (uint32_t j%d = 0; j%d < i%d; j%d++) {\n", depth, depth, depth, depth);
   StrBuf prev_key = {};
-  strbuf_appendf(&prev_key, "%s[j%d].key", entries_expr, depth);
+  strbuf_appendf(&prev_key, "%s[j%d].%s", entries_expr, depth, g->members.key);
   StrBuf eq = {};
-  emit_key_equal(key, prev_key.data, key_expr.data, &eq);
+  emit_key_equal(g, key, prev_key.data, key_expr.data, &eq);
   codegen_indent(out, indent + 6);
   strbuf_appendf(out, "if (%s) {\n", eq.data);
   codegen_indent(out, indent + 8);
@@ -187,9 +193,9 @@ static void emit_read_step(Gen *g, const Type *t, const char *expr, int indent, 
     break;
   case TypeKind_OPTIONAL: {
     StrBuf has = {};
-    strbuf_appendf(&has, "%s.has_value", expr);
+    strbuf_appendf(&has, "%s.%s", expr, g->members.has_value);
     StrBuf value = {};
-    strbuf_appendf(&value, "%s.value", expr);
+    strbuf_appendf(&value, "%s.%s", expr, g->members.value);
     emit_read_optional(g, t->optional.inner, has.data, value.data, indent, depth);
     strbuf_free(&has);
     strbuf_free(&value);
@@ -200,9 +206,9 @@ static void emit_read_step(Gen *g, const Type *t, const char *expr, int indent, 
       emit_read_list_fixed(g, t->list.elem, expr, t->list.length.value, indent, depth);
     } else {
       StrBuf items = {};
-      strbuf_appendf(&items, "%s.items", expr);
+      strbuf_appendf(&items, "%s.%s", expr, g->members.items);
       StrBuf len = {};
-      strbuf_appendf(&len, "%s.len", expr);
+      strbuf_appendf(&len, "%s.%s", expr, g->members.len);
       emit_read_list_var(g, t->list.elem, items.data, len.data, codegen_cap_of(g, t), indent,
                          depth);
       strbuf_free(&items);
@@ -211,9 +217,9 @@ static void emit_read_step(Gen *g, const Type *t, const char *expr, int indent, 
     break;
   case TypeKind_MAP: {
     StrBuf entries = {};
-    strbuf_appendf(&entries, "%s.entries", expr);
+    strbuf_appendf(&entries, "%s.%s", expr, g->members.entries);
     StrBuf len = {};
-    strbuf_appendf(&len, "%s.len", expr);
+    strbuf_appendf(&len, "%s.%s", expr, g->members.len);
     emit_read_map(g, t->map.key, t->map.value, entries.data, len.data, codegen_cap_of(g, t), indent,
                   depth);
     strbuf_free(&entries);
@@ -248,12 +254,13 @@ static void emit_read_union_body(Gen *g, const Type *t) {
     const UnionMember *m = &t->union_members.members[i];
     char *variant = codegen_render_variant(
         g, tag_cname, (Str){.data = bases->ptr[i], .len = strlen(bases->ptr[i])});
-    strbuf_appendf(out, "  case %" PRIu64 ":\n    out->tag = %s;\n", m->tag.value, variant);
+    strbuf_appendf(out, "  case %" PRIu64 ":\n    out->%s = %s;\n", m->tag.value, g->members.tag,
+                   variant);
     free(variant);
     if (type_underlying(m->type)->kind != TypeKind_VOID) {
       char *arm = codegen_render_ident_cstr(g->cfg, bases->ptr[i], g->cfg->field_case, false);
       StrBuf expr = {};
-      strbuf_appendf(&expr, "out->value.%s", arm);
+      strbuf_appendf(&expr, "out->%s.%s", g->members.value, arm);
       emit_read_step(g, m->type, expr.data, 4, 0);
       strbuf_free(&expr);
       free(arm);
@@ -281,8 +288,8 @@ static void emit_read_body(Gen *g, const Type *t, const char *cname) {
     break;
   case TypeKind_DATA:
     if (t->data.length.has_value) {
-      strbuf_appendf(out, "  return bare_read_data_fixed(r, out->data, %" PRIu64 ");\n",
-                     t->data.length.value);
+      strbuf_appendf(out, "  return bare_read_data_fixed(r, out->%s, %" PRIu64 ");\n",
+                     g->members.data, t->data.length.value);
     } else {
       strbuf_appendf(out, "  return bare_read_data(r, out->data, %" PRIu32 ", &out->len);\n",
                      codegen_cap_of(g, t));
@@ -306,23 +313,43 @@ static void emit_read_body(Gen *g, const Type *t, const char *cname) {
   case TypeKind_UNION:
     emit_read_union_body(g, t);
     break;
-  case TypeKind_OPTIONAL:
-    emit_read_optional(g, t->optional.inner, "out->has_value", "out->value", 2, 0);
+  case TypeKind_OPTIONAL: {
+    StrBuf has = {};
+    strbuf_appendf(&has, "out->%s", g->members.has_value);
+    StrBuf value = {};
+    strbuf_appendf(&value, "out->%s", g->members.value);
+    emit_read_optional(g, t->optional.inner, has.data, value.data, 2, 0);
+    strbuf_free(&has);
+    strbuf_free(&value);
     strbuf_append(out, "  return BareStatus_OK;\n");
     break;
-  case TypeKind_LIST:
+  }
+  case TypeKind_LIST: {
+    StrBuf items = {};
+    strbuf_appendf(&items, "out->%s", g->members.items);
     if (t->list.length.has_value) {
-      emit_read_list_fixed(g, t->list.elem, "out->items", t->list.length.value, 2, 0);
+      emit_read_list_fixed(g, t->list.elem, items.data, t->list.length.value, 2, 0);
     } else {
-      emit_read_list_var(g, t->list.elem, "out->items", "out->len", codegen_cap_of(g, t), 2, 0);
+      StrBuf len = {};
+      strbuf_appendf(&len, "out->%s", g->members.len);
+      emit_read_list_var(g, t->list.elem, items.data, len.data, codegen_cap_of(g, t), 2, 0);
+      strbuf_free(&len);
     }
+    strbuf_free(&items);
     strbuf_append(out, "  return BareStatus_OK;\n");
     break;
-  case TypeKind_MAP:
-    emit_read_map(g, t->map.key, t->map.value, "out->entries", "out->len", codegen_cap_of(g, t), 2,
-                  0);
+  }
+  case TypeKind_MAP: {
+    StrBuf entries = {};
+    strbuf_appendf(&entries, "out->%s", g->members.entries);
+    StrBuf len = {};
+    strbuf_appendf(&len, "out->%s", g->members.len);
+    emit_read_map(g, t->map.key, t->map.value, entries.data, len.data, codegen_cap_of(g, t), 2, 0);
+    strbuf_free(&entries);
+    strbuf_free(&len);
     strbuf_append(out, "  return BareStatus_OK;\n");
     break;
+  }
   case TypeKind_VOID:
     UNREACHABLE();
   default:

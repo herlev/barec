@@ -2,7 +2,12 @@ project(
   'barec',
   'c',
   version: '0.1.0',
-  default_options: ['c_std=gnu23', 'warning_level=3', 'werror=true'],
+  default_options: [
+    'c_std=gnu23',
+    'warning_level=3',
+    'werror=true',
+    'b_sanitize=address,undefined',
+  ],
 )
 
 add_project_arguments('-Werror=vla', language: 'c')
@@ -76,6 +81,8 @@ endforeach
 
 test('cli', find_program('tests/cli.sh'), args: [barec])
 
+test('snapshots', find_program('tests/snapshot.sh'), args: [barec])
+
 example_gen = custom_target(
   'example-gen',
   input: 'tests/example.bare',
@@ -87,7 +94,24 @@ test(
   'e2e',
   executable(
     'test_e2e',
-    ['tests/test_e2e.c', example_gen[1]],
+    ['tests/test_e2e.c', example_gen],
+    include_directories: runtime_inc,
+    link_with: bare_runtime,
+  ),
+)
+
+sink_gen = custom_target(
+  'sink-gen',
+  input: 'tests/sink.bare',
+  output: ['sink.h', 'sink.c'],
+  command: [barec, 'generate', '@INPUT@', '-o', '@OUTDIR@', '-n', 'sink'],
+)
+
+test(
+  'sink',
+  executable(
+    'test_sink',
+    ['tests/test_sink.c', sink_gen],
     include_directories: runtime_inc,
     link_with: bare_runtime,
   ),
@@ -97,7 +121,14 @@ example99_gen = custom_target(
   'example99-gen',
   input: 'tests/example.bare',
   output: ['example99.h', 'example99.c'],
-  command: [barec, 'generate', '@INPUT@', '-o', '@OUTDIR@', '-n', 'example99', '--std', 'c99'],
+  command: [
+    barec,
+    'generate',
+    '@INPUT@',
+    '-o', '@OUTDIR@',
+    '-n', 'example99',
+    '--std', 'c99',
+  ],
 )
 
 static_library(
@@ -118,7 +149,7 @@ test(
   'example',
   executable(
     'example-protocol',
-    ['examples/main.c', protocol_gen[1]],
+    ['examples/main.c', protocol_gen],
     include_directories: runtime_inc,
     link_with: bare_runtime,
   ),

@@ -81,9 +81,9 @@ static void emit_write_map(Gen *g, const Type *key, const Type *value, const cha
   codegen_indent(out, indent);
   strbuf_appendf(out, "for (uint32_t i%d = 0; i%d < %s; i%d++) {\n", depth, depth, len_expr, depth);
   StrBuf key_expr = {};
-  strbuf_appendf(&key_expr, "%s[i%d].key", entries_expr, depth);
+  strbuf_appendf(&key_expr, "%s[i%d].%s", entries_expr, depth, g->members.key);
   StrBuf value_expr = {};
-  strbuf_appendf(&value_expr, "%s[i%d].value", entries_expr, depth);
+  strbuf_appendf(&value_expr, "%s[i%d].%s", entries_expr, depth, g->members.value);
   emit_write_step(g, key, key_expr.data, indent + 2, depth + 1);
   emit_write_step(g, value, value_expr.data, indent + 2, depth + 1);
   strbuf_free(&key_expr);
@@ -131,9 +131,9 @@ static void emit_write_step(Gen *g, const Type *t, const char *expr, int indent,
     break;
   case TypeKind_OPTIONAL: {
     StrBuf has = {};
-    strbuf_appendf(&has, "%s.has_value", expr);
+    strbuf_appendf(&has, "%s.%s", expr, g->members.has_value);
     StrBuf value = {};
-    strbuf_appendf(&value, "%s.value", expr);
+    strbuf_appendf(&value, "%s.%s", expr, g->members.value);
     emit_write_optional(g, t->optional.inner, has.data, value.data, indent, depth);
     strbuf_free(&has);
     strbuf_free(&value);
@@ -144,9 +144,9 @@ static void emit_write_step(Gen *g, const Type *t, const char *expr, int indent,
       emit_write_list_fixed(g, t->list.elem, expr, t->list.length.value, indent, depth);
     } else {
       StrBuf items = {};
-      strbuf_appendf(&items, "%s.items", expr);
+      strbuf_appendf(&items, "%s.%s", expr, g->members.items);
       StrBuf len = {};
-      strbuf_appendf(&len, "%s.len", expr);
+      strbuf_appendf(&len, "%s.%s", expr, g->members.len);
       emit_write_list_var(g, t->list.elem, items.data, len.data, codegen_cap_of(g, t), indent,
                           depth);
       strbuf_free(&items);
@@ -155,9 +155,9 @@ static void emit_write_step(Gen *g, const Type *t, const char *expr, int indent,
     break;
   case TypeKind_MAP: {
     StrBuf entries = {};
-    strbuf_appendf(&entries, "%s.entries", expr);
+    strbuf_appendf(&entries, "%s.%s", expr, g->members.entries);
     StrBuf len = {};
-    strbuf_appendf(&len, "%s.len", expr);
+    strbuf_appendf(&len, "%s.%s", expr, g->members.len);
     emit_write_map(g, t->map.key, t->map.value, entries.data, len.data, codegen_cap_of(g, t),
                    indent, depth);
     strbuf_free(&entries);
@@ -187,7 +187,7 @@ static void emit_write_union_body(Gen *g, const Type *t) {
   StrBuf *out = g->out;
   const char *tag_cname = codegen_tag_name_of(g, t);
   const VEC(GenName) *bases = codegen_bases_of(g, t);
-  strbuf_append(out, "  switch (value->tag) {\n");
+  strbuf_appendf(out, "  switch (value->%s) {\n", g->members.tag);
   for (size_t i = 0; i < t->union_members.len; i++) {
     const UnionMember *m = &t->union_members.members[i];
     char *variant = codegen_render_variant(
@@ -199,7 +199,7 @@ static void emit_write_union_body(Gen *g, const Type *t) {
     if (type_underlying(m->type)->kind != TypeKind_VOID) {
       char *arm = codegen_render_ident_cstr(g->cfg, bases->ptr[i], g->cfg->field_case, false);
       StrBuf expr = {};
-      strbuf_appendf(&expr, "value->value.%s", arm);
+      strbuf_appendf(&expr, "value->%s.%s", g->members.value, arm);
       emit_write_step(g, m->type, expr.data, 4, 0);
       strbuf_free(&expr);
       free(arm);
@@ -227,8 +227,8 @@ static void emit_write_body(Gen *g, const Type *t) {
     break;
   case TypeKind_DATA:
     if (t->data.length.has_value) {
-      strbuf_appendf(out, "  return bare_write_data_fixed(w, value->data, %" PRIu64 ");\n",
-                     t->data.length.value);
+      strbuf_appendf(out, "  return bare_write_data_fixed(w, value->%s, %" PRIu64 ");\n",
+                     g->members.data, t->data.length.value);
     } else {
       emit_cap_check(g, "value->len", codegen_cap_of(g, t), 2);
       strbuf_append(out, "  return bare_write_data(w, value->data, value->len);\n");
@@ -252,24 +252,43 @@ static void emit_write_body(Gen *g, const Type *t) {
   case TypeKind_UNION:
     emit_write_union_body(g, t);
     break;
-  case TypeKind_OPTIONAL:
-    emit_write_optional(g, t->optional.inner, "value->has_value", "value->value", 2, 0);
+  case TypeKind_OPTIONAL: {
+    StrBuf has = {};
+    strbuf_appendf(&has, "value->%s", g->members.has_value);
+    StrBuf inner = {};
+    strbuf_appendf(&inner, "value->%s", g->members.value);
+    emit_write_optional(g, t->optional.inner, has.data, inner.data, 2, 0);
+    strbuf_free(&has);
+    strbuf_free(&inner);
     strbuf_append(out, "  return BareStatus_OK;\n");
     break;
-  case TypeKind_LIST:
+  }
+  case TypeKind_LIST: {
+    StrBuf items = {};
+    strbuf_appendf(&items, "value->%s", g->members.items);
     if (t->list.length.has_value) {
-      emit_write_list_fixed(g, t->list.elem, "value->items", t->list.length.value, 2, 0);
+      emit_write_list_fixed(g, t->list.elem, items.data, t->list.length.value, 2, 0);
     } else {
-      emit_write_list_var(g, t->list.elem, "value->items", "value->len", codegen_cap_of(g, t), 2,
-                          0);
+      StrBuf len = {};
+      strbuf_appendf(&len, "value->%s", g->members.len);
+      emit_write_list_var(g, t->list.elem, items.data, len.data, codegen_cap_of(g, t), 2, 0);
+      strbuf_free(&len);
     }
+    strbuf_free(&items);
     strbuf_append(out, "  return BareStatus_OK;\n");
     break;
-  case TypeKind_MAP:
-    emit_write_map(g, t->map.key, t->map.value, "value->entries", "value->len",
-                   codegen_cap_of(g, t), 2, 0);
+  }
+  case TypeKind_MAP: {
+    StrBuf entries = {};
+    strbuf_appendf(&entries, "value->%s", g->members.entries);
+    StrBuf len = {};
+    strbuf_appendf(&len, "value->%s", g->members.len);
+    emit_write_map(g, t->map.key, t->map.value, entries.data, len.data, codegen_cap_of(g, t), 2, 0);
+    strbuf_free(&entries);
+    strbuf_free(&len);
     strbuf_append(out, "  return BareStatus_OK;\n");
     break;
+  }
   case TypeKind_VOID:
     UNREACHABLE();
   default:

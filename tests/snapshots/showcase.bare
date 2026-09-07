@@ -1,0 +1,20 @@
+type UserId u64
+
+type Color enum {
+  RED
+  GREEN
+  BLUE = 10
+}
+
+type Profile struct {
+  displayName: str
+  avatar: optional<data>
+  favorites: list<Color>
+}
+
+type LoginEvent struct {
+  user: UserId
+  when: u64
+}
+
+type Event union {LoginEvent | Profile}

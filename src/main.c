@@ -1,6 +1,5 @@
 #include "cli/cli.h"
 #include "cli/cmd.h"
-#include "util/macros.h"
 
 int main(int argc, char **argv) {
   Cli cli = cli_parse_args(argc, argv);
@@ -12,5 +11,4 @@ int main(int argc, char **argv) {
   case CliCommand_CONFIG:
     return cmd_config();
   }
-  UNREACHABLE();
 }

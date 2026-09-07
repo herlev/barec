@@ -1,1 +1,2 @@
 tests/golden/*
+tests/snapshots/*.h

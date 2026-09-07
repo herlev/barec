@@ -42,6 +42,19 @@ typedef struct {
   VEC(u32) str_caps;
   VEC(u32) data_caps;
   bool *override_used;
+  /// Invented member names rendered per field_case. The shared BareStrN
+  /// and BareDataN typedefs keep literal data/len regardless, since the
+  /// BARE_STR helper macros spell those members out.
+  struct {
+    char *has_value;
+    char *value;
+    char *items;
+    char *len;
+    char *entries;
+    char *key;
+    char *tag;
+    char *data;
+  } members;
 } Gen;
 
 static inline bool codegen_is_aggregate(TypeKind kind) {
