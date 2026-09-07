@@ -1,8 +1,8 @@
-#include "lexer.h"
+#include "frontend/lexer.h"
 
-#include "diag.h"
-#include "macros.h"
-#include "types.h"
+#include "util/diag.h"
+#include "util/macros.h"
+#include "util/types.h"
 
 #include <assert.h>
 #include <stdint.h>

@@ -1,9 +1,9 @@
-#include "check.h"
+#include "frontend/check.h"
 
-#include "diag.h"
-#include "optional.h"
-#include "schema.h"
-#include "types.h"
+#include "frontend/schema.h"
+#include "util/diag.h"
+#include "util/optional.h"
+#include "util/types.h"
 
 #include <stddef.h>
 #include <stdint.h>
@@ -21,9 +21,7 @@ static const Type *underlying(const Type *type) {
   return type;
 }
 
-static bool is_ultimately_void(const Type *type) {
-  return underlying(type)->kind == TypeKind_VOID;
-}
+static bool is_ultimately_void(const Type *type) { return underlying(type)->kind == TypeKind_VOID; }
 
 static bool type_equal(const Type *a, const Type *b);
 
@@ -100,7 +98,7 @@ static bool type_equal(const Type *a, const Type *b) {
   }
 }
 
-[[nodiscard]] static bool assign_next(Checker *ctx, SrcLoc loc, OPTIONAL(u64) *slot, bool *first,
+[[nodiscard]] static bool assign_next(Checker *ctx, SrcLoc loc, OPTIONAL(u64) * slot, bool *first,
                                       u64 *prev, const char *what) {
   if (!slot->has_value) {
     if (*first) {

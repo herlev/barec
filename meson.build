@@ -14,7 +14,13 @@ bare_runtime = static_library('bare', 'runtime/bare.c')
 
 barec_lib = static_library(
   'barec_lib',
-  ['src/check.c', 'src/diag.c', 'src/lexer.c', 'src/parser.c', 'src/schema.c'],
+  [
+    'src/frontend/check.c',
+    'src/frontend/lexer.c',
+    'src/frontend/parser.c',
+    'src/frontend/schema.c',
+    'src/util/diag.c',
+  ],
   include_directories: src_inc,
 )
 

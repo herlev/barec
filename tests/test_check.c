@@ -1,7 +1,7 @@
-#include "check.h"
-#include "diag.h"
-#include "parser.h"
-#include "schema.h"
+#include "frontend/check.h"
+#include "frontend/parser.h"
+#include "frontend/schema.h"
+#include "util/diag.h"
 
 #include <assert.h>
 #include <string.h>

@@ -1,8 +1,8 @@
 #pragma once
 
-#include "diag.h"
-#include "optional.h"
-#include "types.h"
+#include "util/diag.h"
+#include "util/optional.h"
+#include "util/types.h"
 
 #include <stddef.h>
 

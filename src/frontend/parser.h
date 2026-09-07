@@ -1,7 +1,7 @@
 #pragma once
 
-#include "diag.h"
-#include "schema.h"
+#include "frontend/schema.h"
+#include "util/diag.h"
 
 #include <stddef.h>
 

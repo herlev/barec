@@ -1,7 +1,7 @@
-#include "diag.h"
-#include "parser.h"
-#include "schema.h"
-#include "types.h"
+#include "frontend/parser.h"
+#include "frontend/schema.h"
+#include "util/diag.h"
+#include "util/types.h"
 
 #include <assert.h>
 #include <stdio.h>

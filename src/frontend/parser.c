@@ -1,11 +1,11 @@
-#include "parser.h"
+#include "frontend/parser.h"
 
-#include "diag.h"
-#include "lexer.h"
-#include "optional.h"
-#include "schema.h"
-#include "types.h"
-#include "vec.h"
+#include "frontend/lexer.h"
+#include "frontend/schema.h"
+#include "util/diag.h"
+#include "util/optional.h"
+#include "util/types.h"
+#include "util/vec.h"
 
 #include <assert.h>
 #include <stddef.h>

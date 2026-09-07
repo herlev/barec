@@ -1,9 +1,9 @@
 #pragma once
 
-#include "config.h"
-#include "diag.h"
-#include "schema.h"
-#include "strbuf.h"
+#include "backend/config.h"
+#include "frontend/schema.h"
+#include "util/diag.h"
+#include "util/strbuf.h"
 
 /// Emits the generated header and source for a checked schema. basename is
 /// the include name referenced from the generated source ("<basename>.h").

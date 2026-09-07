@@ -1,7 +1,7 @@
 #pragma once
 
-#include "diag.h"
-#include "types.h"
+#include "util/diag.h"
+#include "util/types.h"
 
 #include <stddef.h>
 

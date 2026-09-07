@@ -1,4 +1,4 @@
-#include "diag.h"
+#include "util/diag.h"
 
 #include <stdarg.h>
 #include <stdio.h>

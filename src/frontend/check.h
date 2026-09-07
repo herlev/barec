@@ -1,7 +1,7 @@
 #pragma once
 
-#include "diag.h"
-#include "schema.h"
+#include "frontend/schema.h"
+#include "util/diag.h"
 
 /// Validates the spec's semantic invariants and completes the tree in place:
 /// resolves user-type references (defined before use, no recursion), assigns

@@ -1,5 +1,5 @@
 #include "bare.h"
-#include "macros.h"
+#include "util/macros.h"
 
 #include <assert.h>
 #include <stdint.h>

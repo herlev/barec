@@ -1,4 +1,4 @@
-#include "schema.h"
+#include "frontend/schema.h"
 
 #include <stddef.h>
 #include <stdlib.h>
