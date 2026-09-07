@@ -14,7 +14,7 @@ bare_runtime = static_library('bare', 'runtime/bare.c')
 
 barec_lib = static_library(
   'barec_lib',
-  ['src/diag.c', 'src/lexer.c', 'src/parser.c', 'src/schema.c'],
+  ['src/check.c', 'src/diag.c', 'src/lexer.c', 'src/parser.c', 'src/schema.c'],
   include_directories: src_inc,
 )
 
@@ -48,3 +48,11 @@ test_parser = executable(
   link_with: barec_lib,
 )
 test('parser', test_parser)
+
+test_check = executable(
+  'test_check',
+  'tests/test_check.c',
+  include_directories: src_inc,
+  link_with: barec_lib,
+)
+test('check', test_check)
