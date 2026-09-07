@@ -3,6 +3,13 @@
 #include <stddef.h>
 #include <stdlib.h>
 
+const Type *type_underlying(const Type *type) {
+  while (type->kind == TypeKind_USER) {
+    type = type->user.resolved;
+  }
+  return type;
+}
+
 void type_free(Type *type) {
   if (type == nullptr) {
     return;

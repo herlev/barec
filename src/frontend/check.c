@@ -14,14 +14,9 @@ typedef struct {
   Diag *diag;
 } Checker;
 
-static const Type *underlying(const Type *type) {
-  while (type->kind == TypeKind_USER) {
-    type = type->user.resolved;
-  }
-  return type;
+static bool is_ultimately_void(const Type *type) {
+  return type_underlying(type)->kind == TypeKind_VOID;
 }
-
-static bool is_ultimately_void(const Type *type) { return underlying(type)->kind == TypeKind_VOID; }
 
 static bool type_equal(const Type *a, const Type *b);
 
@@ -208,7 +203,7 @@ static bool type_equal(const Type *a, const Type *b) {
 }
 
 [[nodiscard]] static bool check_map_key(Checker *ctx, const Type *key) {
-  switch (underlying(key)->kind) {
+  switch (type_underlying(key)->kind) {
   case TypeKind_F32:
   case TypeKind_F64:
     diag_set(ctx->diag, key->loc, "floating-point types are not allowed as map keys");

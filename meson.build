@@ -15,6 +15,10 @@ bare_runtime = static_library('bare', 'runtime/bare.c')
 barec_lib = static_library(
   'barec_lib',
   [
+    'src/backend/codegen/emit.c',
+    'src/backend/codegen/generate.c',
+    'src/backend/codegen/ident.c',
+    'src/backend/codegen/scan.c',
     'src/backend/config.c',
     'src/backend/names.c',
     'src/frontend/check.c',
@@ -81,3 +85,11 @@ test_names = executable(
   link_with: barec_lib,
 )
 test('names', test_names)
+
+test_codegen = executable(
+  'test_codegen',
+  'tests/test_codegen.c',
+  include_directories: src_inc,
+  link_with: barec_lib,
+)
+test('codegen', test_codegen)

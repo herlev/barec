@@ -105,5 +105,9 @@ typedef struct {
   size_t len;
 } Schema;
 
+/// Follows user-type references to the concrete type. Valid only after
+/// check_schema has resolved the tree.
+const Type *type_underlying(const Type *type);
+
 void type_free(Type *type);
 void schema_free(Schema *schema);

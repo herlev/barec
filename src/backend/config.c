@@ -13,6 +13,7 @@
 typedef enum : u8 {
   Section_NONE,
   Section_NAMING,
+  Section_CODEGEN,
   Section_CAPS,
   Section_CAP_OVERRIDES,
 } Section;
@@ -133,13 +134,15 @@ static bool is_ident_char(char c) {
   Str name = trim((Str){.data = line.data + 1, .len = line.len - 2});
   if (str_eq(name, STR("naming"))) {
     ld->section = Section_NAMING;
+  } else if (str_eq(name, STR("codegen"))) {
+    ld->section = Section_CODEGEN;
   } else if (str_eq(name, STR("caps"))) {
     ld->section = Section_CAPS;
   } else if (str_eq(name, STR("caps.overrides"))) {
     ld->section = Section_CAP_OVERRIDES;
   } else {
     diag_set(ld->diag, loc_of(ld, line.data),
-             "unknown section '[%.*s]', expected [naming], [caps], or [caps.overrides]",
+             "unknown section '[%.*s]', expected [naming], [codegen], [caps], or [caps.overrides]",
              (int)name.len, name.data);
     return false;
   }
@@ -163,6 +166,24 @@ static bool is_ident_char(char c) {
     return parse_prefix(ld, value);
   }
   diag_set(ld->diag, loc_of(ld, key.data), "unknown key '%.*s' in [naming]", (int)key.len,
+           key.data);
+  return false;
+}
+
+[[nodiscard]] static bool load_codegen_key(Loader *ld, Str key, Str value) {
+  if (str_eq(key, STR("std"))) {
+    if (str_eq(value, STR("c99"))) {
+      ld->cfg.std = CStd_C99;
+    } else if (str_eq(value, STR("c23"))) {
+      ld->cfg.std = CStd_C23;
+    } else {
+      diag_set(ld->diag, loc_of(ld, value.data), "invalid std '%.*s', expected c99 or c23",
+               (int)value.len, value.data);
+      return false;
+    }
+    return true;
+  }
+  diag_set(ld->diag, loc_of(ld, key.data), "unknown key '%.*s' in [codegen]", (int)key.len,
            key.data);
   return false;
 }
@@ -241,6 +262,8 @@ static bool is_ident_char(char c) {
     return false;
   case Section_NAMING:
     return load_naming_key(ld, key, value);
+  case Section_CODEGEN:
+    return load_codegen_key(ld, key, value);
   case Section_CAPS:
     return load_caps_key(ld, key, value);
   case Section_CAP_OVERRIDES:
@@ -250,6 +273,9 @@ static bool is_ident_char(char c) {
 }
 
 bool config_load_text(Config *cfg, const char *text, size_t len, Diag *diag) {
+  if (len == SIZE_MAX) {
+    abort();
+  }
   char *owned = malloc(len + 1);
   if (owned == nullptr) {
     abort();
@@ -302,9 +328,10 @@ bool config_load(Config *cfg, const char *path, Diag *diag) {
       }
       text = grown;
     }
-    size_t n = fread(text + len, 1, cap - len, file);
+    size_t want = cap - len;
+    size_t n = fread(text + len, 1, want, file);
     len += n;
-    if (n == 0) {
+    if (n < want) {
       if (ferror(file) != 0) {
         diag_set(diag, (SrcLoc){}, "cannot read config file '%s'", path);
         ok = false;
@@ -326,6 +353,7 @@ Config config_default(void) {
       .field_case = CaseStyle_SNAKE,
       .function_case = CaseStyle_SNAKE,
       .enum_variant_style = EnumVariantStyle_TYPE_UPPER,
+      .std = CStd_C23,
       .prefix = {},
       .str_cap = 64,
       .data_cap = 64,

@@ -18,6 +18,11 @@ typedef enum : u8 {
   EnumVariantStyle_TYPE_PASCAL,
 } EnumVariantStyle;
 
+typedef enum : u8 {
+  CStd_C99,
+  CStd_C23,
+} CStd;
+
 /// path addresses a schema element as Type.field, with .key/.value for map
 /// sides and .item for list elements, e.g. "Customer.orders" or
 /// "Employee.metadata.key".
@@ -33,6 +38,7 @@ typedef struct {
   CaseStyle field_case;
   CaseStyle function_case;
   EnumVariantStyle enum_variant_style;
+  CStd std;
   Str prefix;
   u32 str_cap;
   u32 data_cap;
@@ -44,7 +50,8 @@ typedef struct {
 } Config;
 
 /// Style-guide defaults: pascal types, snake fields and functions,
-/// Type_UPPER enum variants, no prefix, caps str/data 64 and list/map 8.
+/// Type_UPPER enum variants, C23 output, no prefix, caps str/data 64 and
+/// list/map 8.
 Config config_default(void);
 
 /// Loads INI-style config text over *cfg, which must hold defaults (no

@@ -4,8 +4,10 @@
 #include <stdint.h>
 #include <string.h>
 
-static_assert(sizeof(float) == 4);
-static_assert(sizeof(double) == 8);
+#if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L
+static_assert(sizeof(float) == 4, "float must be IEEE 754 binary32");
+static_assert(sizeof(double) == 8, "double must be IEEE 754 binary64");
+#endif
 
 enum { UINT_MAX_OCTETS = 10 };
 
@@ -19,7 +21,7 @@ BareWriter bare_writer_new(uint8_t data[], size_t cap) {
 
 size_t bare_reader_remaining(const BareReader *r) { return r->len - r->pos; }
 
-[[nodiscard]] static BareStatus read_bytes(BareReader *r, uint8_t out[], size_t n) {
+BARE_NODISCARD static BareStatus read_bytes(BareReader *r, uint8_t out[], size_t n) {
   if (bare_reader_remaining(r) < n) {
     return BareStatus_SHORT_READ;
   }
@@ -28,7 +30,7 @@ size_t bare_reader_remaining(const BareReader *r) { return r->len - r->pos; }
   return BareStatus_OK;
 }
 
-[[nodiscard]] static BareStatus write_bytes(BareWriter *w, const uint8_t data[], size_t n) {
+BARE_NODISCARD static BareStatus write_bytes(BareWriter *w, const uint8_t data[], size_t n) {
   if (w->cap - w->len < n) {
     return BareStatus_SHORT_WRITE;
   }
@@ -266,8 +268,8 @@ BareStatus bare_read_bool(BareReader *r, bool *out) {
 
 BareStatus bare_write_bool(BareWriter *w, bool value) { return bare_write_u8(w, (uint8_t)value); }
 
-[[nodiscard]] static BareStatus read_prefixed(BareReader *r, uint8_t buf[], uint32_t cap,
-                                              uint32_t *len, bool validate_utf8) {
+BARE_NODISCARD static BareStatus read_prefixed(BareReader *r, uint8_t buf[], uint32_t cap,
+                                               uint32_t *len, bool validate_utf8) {
   uint64_t n;
   BareStatus status = bare_read_uint(r, &n);
   if (status != BareStatus_OK) {
@@ -345,7 +347,7 @@ bool bare_utf8_valid(const uint8_t data[], size_t len) {
     } else if ((lead & 0xf8) == 0xf0) {
       continuations = 3;
       codepoint = lead & 0x07;
-      min = 0x1'0000;
+      min = 0x10000;
     } else {
       return false;
     }
@@ -359,7 +361,7 @@ bool bare_utf8_valid(const uint8_t data[], size_t len) {
       }
       codepoint = (codepoint << 6) | (byte & 0x3f);
     }
-    if (codepoint < min || codepoint > 0x10'FFFF || (codepoint >= 0xD800 && codepoint <= 0xDFFF)) {
+    if (codepoint < min || codepoint > 0x10FFFF || (codepoint >= 0xD800 && codepoint <= 0xDFFF)) {
       return false;
     }
     i += continuations + 1;

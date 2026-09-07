@@ -17,11 +17,11 @@
   do {                                                                                             \
     if ((vec)->len == (vec)->cap) {                                                                \
       (vec)->cap = (vec)->cap == 0 ? 8 : (vec)->cap * 2;                                           \
-      void *vec_grown_ = realloc((vec)->ptr, (vec)->cap * sizeof(*(vec)->ptr));                    \
+      void *vec_grown_ = realloc((void *)(vec)->ptr, (vec)->cap * sizeof(*(vec)->ptr));            \
       if (vec_grown_ == nullptr) {                                                                 \
         abort();                                                                                   \
       }                                                                                            \
-      (vec)->ptr = vec_grown_;                                                                     \
+      (vec)->ptr = (typeof((vec)->ptr))vec_grown_;                                                 \
     }                                                                                              \
     (vec)->ptr[(vec)->len] = (item);                                                               \
     (vec)->len += 1;                                                                               \
