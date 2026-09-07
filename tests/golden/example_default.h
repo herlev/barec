@@ -9,9 +9,10 @@
 #ifndef BARE_STR64_DEFINED
 #define BARE_STR64_DEFINED
 typedef struct {
-  char data[64];
+  char data[64] BARE_NONSTRING;
   uint32_t len;
 } BareStr64;
+#define BARE_STR64(lit) ((BareStr64){.data = "" lit, .len = sizeof(lit) - 1})
 #endif
 
 #ifndef BARE_DATA64_DEFINED

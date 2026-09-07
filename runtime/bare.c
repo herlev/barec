@@ -325,6 +325,21 @@ BareStatus bare_write_data_fixed(BareWriter *w, const uint8_t buf[], size_t len)
   return write_bytes(w, buf, len);
 }
 
+BareStatus bare_str_set(char data[], size_t cap, uint32_t *len, const char *text) {
+  size_t n = strlen(text);
+  if (n > cap) {
+    return BareStatus_CAP_EXCEEDED;
+  }
+  memcpy(data, text, n);
+  *len = (uint32_t)n;
+  return BareStatus_OK;
+}
+
+bool bare_str_eq(const char data[], uint32_t len, const char *text) {
+  size_t n = strlen(text);
+  return (bool)(len == n && memcmp(data, text, n) == 0);
+}
+
 bool bare_utf8_valid(const uint8_t data[], size_t len) {
   size_t i = 0;
   while (i < len) {

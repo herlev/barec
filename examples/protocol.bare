@@ -1,0 +1,29 @@
+type DeviceId u32
+type Celsius f32
+
+type Ping void
+type Pong void
+
+type ReadTemperature struct {
+  device: DeviceId
+}
+
+type Temperature struct {
+  device: DeviceId
+  reading: Celsius
+  timestamp: u64
+}
+
+type SetLabel struct {
+  device: DeviceId
+  label: str
+}
+
+type Ok void
+
+type Error struct {
+  message: str
+}
+
+type Request union {Ping | ReadTemperature | SetLabel}
+type Response union {Pong | Temperature | Ok | Error}

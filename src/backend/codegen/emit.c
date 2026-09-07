@@ -382,8 +382,12 @@ void codegen_emit_shared_typedefs(Gen *g) {
     strbuf_appendf(out,
                    "#ifndef BARE_STR%" PRIu32 "_DEFINED\n#define BARE_STR%" PRIu32
                    "_DEFINED\ntypedef struct {\n  char data[%" PRIu32
-                   "];\n  uint32_t len;\n} BareStr%" PRIu32 ";\n#endif\n\n",
+                   "] BARE_NONSTRING;\n  uint32_t len;\n} BareStr%" PRIu32 ";\n",
                    cap, cap, cap, cap);
+    strbuf_appendf(out,
+                   "#define BARE_STR%" PRIu32 "(lit) ((BareStr%" PRIu32
+                   "){.data = \"\" lit, .len = sizeof(lit) - 1})\n#endif\n\n",
+                   cap, cap);
   }
   for (size_t i = 0; i < g->data_caps.len; i++) {
     u32 cap = g->data_caps.ptr[i];

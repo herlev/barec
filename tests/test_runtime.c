@@ -249,6 +249,30 @@ static void test_short_write(void) {
   assert(bare_write_str(&w, "BARE", 4) == BareStatus_OK || true);
 }
 
+static void test_str_helpers(void) {
+  struct {
+    char data[8] BARE_NONSTRING;
+    uint32_t len;
+  } field;
+  assert(BARE_STR_SET(&field, "bare") == BareStatus_OK);
+  assert(field.len == 4);
+  assert(BARE_STR_EQ(&field, "bare"));
+  assert(!BARE_STR_EQ(&field, "bar"));
+  assert(!BARE_STR_EQ(&field, "bares"));
+  assert(BARE_STR_SET(&field, "12345678") == BareStatus_OK);
+  assert(field.len == 8);
+  assert(BARE_STR_SET(&field, "123456789") == BareStatus_CAP_EXCEEDED);
+  assert(BARE_STR_SET(&field, "") == BareStatus_OK);
+  assert(field.len == 0);
+  assert(BARE_STR_EQ(&field, ""));
+
+  BARE_STR_LIT(field, "lit");
+  assert(field.len == 3);
+  assert(BARE_STR_EQ(&field, "lit"));
+  BARE_STR_LIT(field, "12345678");
+  assert(field.len == 8);
+}
+
 static void test_utf8(void) {
   assert(bare_utf8_valid((const uint8_t *)"hello", 5));
   assert(bare_utf8_valid(BYTES(0xc3, 0xa9)));
@@ -274,6 +298,7 @@ int main(void) {
   test_str();
   test_data();
   test_short_write();
+  test_str_helpers();
   test_utf8();
   return 0;
 }

@@ -7,10 +7,12 @@
 #if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 202311L
 #define BARE_NODISCARD [[nodiscard]]
 #define BARE_ENUM_U8 : uint8_t
+#define BARE_TYPEOF(x) typeof(x)
 #else
 #define BARE_ENUM_U8
 #ifdef __GNUC__
 #define BARE_NODISCARD __attribute__((warn_unused_result))
+#define BARE_TYPEOF(x) __typeof__(x)
 #else
 #define BARE_NODISCARD
 #endif
@@ -25,6 +27,15 @@
       return bare_try_status_;                                                                     \
     }                                                                                              \
   } while (0)
+
+#ifdef __has_attribute
+#if __has_attribute(nonstring)
+#define BARE_NONSTRING __attribute__((nonstring))
+#endif
+#endif
+#ifndef BARE_NONSTRING
+#define BARE_NONSTRING
+#endif
 
 typedef enum BARE_ENUM_U8 {
   BareStatus_OK,
@@ -106,3 +117,26 @@ BARE_NODISCARD BareStatus bare_write_data_fixed(BareWriter *w, const uint8_t buf
 /// RFC 3629 validation, rejects overlong forms, surrogates, and values
 /// beyond U+10FFFF.
 BARE_NODISCARD bool bare_utf8_valid(const uint8_t data[], size_t len);
+
+/// Convenience helpers for generated fixed-capacity string fields, which
+/// all share the shape { char data[N]; uint32_t len; }:
+///   BARE_TRY(BARE_STR_SET(&msg.label, "greenhouse"));
+///   if (BARE_STR_EQ(&msg.label, "greenhouse")) { ... }
+///   printf("%.*s", BARE_STR_ARG(&msg.label));
+#define BARE_STR_SET(field, text)                                                                  \
+  bare_str_set((field)->data, sizeof((field)->data), &(field)->len, (text))
+#define BARE_STR_EQ(field, text) bare_str_eq((field)->data, (field)->len, (text))
+#define BARE_STR_ARG(field) (int)(field)->len, (field)->data
+
+/// Assigns a string literal to a fixed-capacity string field. A literal
+/// longer than the field's capacity is rejected at compile time, so unlike
+/// BARE_STR_SET there is no status to check. Literals only.
+#ifdef BARE_TYPEOF
+#define BARE_STR_LIT(field, lit)                                                                   \
+  ((void)((field) = (BARE_TYPEOF(field)){.data = "" lit, .len = sizeof(lit) - 1}))
+#endif
+
+/// Copies NUL-terminated text into a cap-bounded field, CAP_EXCEEDED when
+/// it does not fit. The terminator is not stored and len does not count it.
+BARE_NODISCARD BareStatus bare_str_set(char data[], size_t cap, uint32_t *len, const char *text);
+BARE_NODISCARD bool bare_str_eq(const char data[], uint32_t len, const char *text);
