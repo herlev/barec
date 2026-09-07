@@ -177,7 +177,7 @@ static void emit_write_enum_body(Gen *g, const Type *t) {
   StrBuf *out = g->out;
   strbuf_append(out, "  switch ((uint64_t)*value) {\n");
   for (size_t i = 0; i < t->enum_values.len; i++) {
-    strbuf_appendf(out, "  case %" PRIu64 ":\n", t->enum_values.values[i].value.value);
+    strbuf_appendf(out, "  case %s:\n", codegen_u64_lit(t->enum_values.values[i].value.value).text);
   }
   strbuf_append(out, "    break;\n  default:\n    return BareStatus_INVALID_ENUM;\n  }\n");
   strbuf_append(out, "  return bare_write_uint(w, (uint64_t)*value);\n");
@@ -195,7 +195,7 @@ static void emit_write_union_body(Gen *g, const Type *t) {
     strbuf_appendf(out, "  case %s:\n", variant);
     free(variant);
     codegen_indent(out, 4);
-    strbuf_appendf(out, "BARE_TRY(bare_write_uint(w, %" PRIu64 "));\n", m->tag.value);
+    strbuf_appendf(out, "BARE_TRY(bare_write_uint(w, %s));\n", codegen_u64_lit(m->tag.value).text);
     if (type_underlying(m->type)->kind != TypeKind_VOID) {
       char *arm = codegen_render_ident_cstr(g->cfg, bases->ptr[i], g->cfg->field_case, false);
       StrBuf expr = {};

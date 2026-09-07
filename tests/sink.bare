@@ -6,6 +6,11 @@ type Mode enum {
   TURBO = 300
 }
 type Blob data[4]
+type Huge enum {
+  TINY
+  BIG = 18446744073709551615
+}
+type Wide union { u8 | str = 9223372036854775808 }
 type Matrix list<list<u8>[3]>[2]
 
 type Packet struct {

@@ -79,6 +79,14 @@ char *codegen_render_variant(const Gen *g, const char *type_cname, Str raw);
 /// function suffixes and union member base names.
 const char *codegen_bare_type_name(TypeKind kind);
 
+typedef struct {
+  char text[32];
+} U64Lit;
+
+/// Renders a value as a C integer constant, wrapped in UINT64_C when it
+/// exceeds INT64_MAX since larger unsuffixed literals are not valid C.
+U64Lit codegen_u64_lit(u64 value);
+
 /// Walks a user type assigning derived names and resolving caps, keyed by
 /// the dotted override path rooted at the user type's name.
 void codegen_scan_type(Gen *g, const Type *t, StrBuf *path);

@@ -146,10 +146,30 @@ static void test_duplicate_keys(void) {
   assert(packet_decode(&out, buf, written) == BareStatus_DUPLICATE_KEY);
 }
 
+static void test_huge_constants(void) {
+  uint8_t buf[32];
+  size_t written = 0;
+  Huge h = Huge_BIG;
+  assert(huge_encode(&h, buf, sizeof(buf), &written) == BareStatus_OK);
+  Huge hout = Huge_TINY;
+  assert(huge_decode(&hout, buf, written) == BareStatus_OK);
+  assert(hout == Huge_BIG);
+
+  Wide w = {0};
+  w.tag = WideTag_STR;
+  w.value.str = BARE_STR64("big");
+  assert(wide_encode(&w, buf, sizeof(buf), &written) == BareStatus_OK);
+  Wide wout = {0};
+  assert(wide_decode(&wout, buf, written) == BareStatus_OK);
+  assert(wout.tag == WideTag_STR);
+  assert(BARE_STR_EQ(&wout.value.str, "big"));
+}
+
 int main(void) {
   test_empty_roundtrip();
   test_full_roundtrip();
   test_union_data_arms();
   test_duplicate_keys();
+  test_huge_constants();
   return 0;
 }

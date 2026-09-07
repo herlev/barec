@@ -239,7 +239,7 @@ static void emit_read_enum_body(Gen *g, const Type *t, const char *cname) {
   StrBuf *out = g->out;
   strbuf_append(out, "  uint64_t raw;\n  BARE_TRY(bare_read_uint(r, &raw));\n  switch (raw) {\n");
   for (size_t i = 0; i < t->enum_values.len; i++) {
-    strbuf_appendf(out, "  case %" PRIu64 ":\n", t->enum_values.values[i].value.value);
+    strbuf_appendf(out, "  case %s:\n", codegen_u64_lit(t->enum_values.values[i].value.value).text);
   }
   strbuf_append(out, "    break;\n  default:\n    return BareStatus_INVALID_ENUM;\n  }\n");
   strbuf_appendf(out, "  *out = (%s)raw;\n  return BareStatus_OK;\n", cname);
@@ -254,8 +254,8 @@ static void emit_read_union_body(Gen *g, const Type *t) {
     const UnionMember *m = &t->union_members.members[i];
     char *variant = codegen_render_variant(
         g, tag_cname, (Str){.data = bases->ptr[i], .len = strlen(bases->ptr[i])});
-    strbuf_appendf(out, "  case %" PRIu64 ":\n    out->%s = %s;\n", m->tag.value, g->members.tag,
-                   variant);
+    strbuf_appendf(out, "  case %s:\n    out->%s = %s;\n", codegen_u64_lit(m->tag.value).text,
+                   g->members.tag, variant);
     free(variant);
     if (type_underlying(m->type)->kind != TypeKind_VOID) {
       char *arm = codegen_render_ident_cstr(g->cfg, bases->ptr[i], g->cfg->field_case, false);

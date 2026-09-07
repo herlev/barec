@@ -12,6 +12,7 @@
 #include <inttypes.h>
 #include <stddef.h>
 #include <stdint.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -27,6 +28,16 @@ static const char *const PRIMITIVE_CTYPE[] = {
     [TypeKind_I64] = "int64_t",   [TypeKind_F32] = "float",    [TypeKind_F64] = "double",
     [TypeKind_BOOL] = "bool",
 };
+
+U64Lit codegen_u64_lit(u64 value) {
+  U64Lit lit;
+  if (value > INT64_MAX) {
+    (void)snprintf(lit.text, sizeof(lit.text), "UINT64_C(%" PRIu64 ")", value);
+  } else {
+    (void)snprintf(lit.text, sizeof(lit.text), "%" PRIu64, value);
+  }
+  return lit;
+}
 
 void codegen_indent(StrBuf *out, int indent) {
   for (int i = 0; i < indent; i++) {
@@ -165,7 +176,7 @@ static void emit_enum_def(Gen *g, const char *cname, const EnumEntry entries[], 
     strbuf_appendf(out, "typedef enum : %s {\n", base);
     for (size_t i = 0; i < n; i++) {
       char *variant = codegen_render_variant(g, cname, entries[i].raw);
-      strbuf_appendf(out, "  %s = %" PRIu64 ",\n", variant, entries[i].value);
+      strbuf_appendf(out, "  %s = %s,\n", variant, codegen_u64_lit(entries[i].value).text);
       free(variant);
     }
     strbuf_appendf(out, "} %s;\n\n", cname);
