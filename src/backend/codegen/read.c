@@ -187,9 +187,19 @@ static void emit_read_step(Gen *g, const Type *t, const char *expr, int indent, 
     break;
   }
   case TypeKind_ENUM:
-  case TypeKind_STRUCT:
   case TypeKind_UNION:
     emit_read_call(g, codegen_name_of(g, t), expr, indent);
+    break;
+  case TypeKind_STRUCT:
+    for (size_t i = 0; i < t->struct_fields.len; i++) {
+      const StructField *field = &t->struct_fields.fields[i];
+      char *fname = codegen_render_ident(g->cfg, field->name, g->cfg->field_case, false);
+      StrBuf fexpr = {};
+      strbuf_appendf(&fexpr, "%s.%s", expr, fname);
+      emit_read_step(g, field->type, fexpr.data, indent, depth);
+      strbuf_free(&fexpr);
+      free(fname);
+    }
     break;
   case TypeKind_OPTIONAL: {
     StrBuf has = {};

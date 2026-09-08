@@ -204,7 +204,7 @@ static void test_type_suffix(void) {
 static void test_name_collision(void) {
   Config cfg = config_default();
   Diag diag = generate_fail("type FooBar u8\n"
-                            "type Foo struct { bar: struct { x: u8 } }",
+                            "type Foo struct { bar: enum { X } }",
                             &cfg);
   assert(strstr(diag.message, "'FooBar' is used more than once") != nullptr);
 }

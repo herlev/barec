@@ -29,10 +29,6 @@ static void emit_derived_fns(Gen *g, const Type *t, bool is_root) {
     for (size_t i = 0; i < t->struct_fields.len; i++) {
       emit_derived_fns(g, t->struct_fields.fields[i].type, false);
     }
-    if (!is_root) {
-      codegen_emit_read_fn(g, t, codegen_name_of(g, t), false);
-      codegen_emit_write_fn(g, t, codegen_name_of(g, t), false);
-    }
     break;
   case TypeKind_UNION:
     for (size_t i = 0; i < t->union_members.len; i++) {

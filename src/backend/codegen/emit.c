@@ -68,10 +68,21 @@ void codegen_emit_member(Gen *g, const Type *t, const char *name, const char *di
     break;
   }
   case TypeKind_ENUM:
-  case TypeKind_STRUCT:
   case TypeKind_UNION:
     codegen_indent(out, indent);
     strbuf_appendf(out, "%s %s%s;\n", codegen_name_of(g, t), name, dims);
+    break;
+  case TypeKind_STRUCT:
+    codegen_indent(out, indent);
+    strbuf_append(out, "struct {\n");
+    for (size_t i = 0; i < t->struct_fields.len; i++) {
+      const StructField *field = &t->struct_fields.fields[i];
+      char *fname = codegen_render_ident(g->cfg, field->name, g->cfg->field_case, false);
+      codegen_emit_member(g, field->type, fname, "", indent + 2);
+      free(fname);
+    }
+    codegen_indent(out, indent);
+    strbuf_appendf(out, "} %s%s;\n", name, dims);
     break;
   case TypeKind_OPTIONAL:
     codegen_indent(out, indent);
@@ -223,7 +234,7 @@ static void emit_schema_enum_def(Gen *g, const Type *t) {
   free(entries);
 }
 
-static void emit_struct_def(Gen *g, const Type *t) {
+static void emit_struct_def(Gen *g, const Type *t, const char *cname) {
   StrBuf *out = g->out;
   strbuf_append(out, "typedef struct {\n");
   for (size_t i = 0; i < t->struct_fields.len; i++) {
@@ -232,7 +243,7 @@ static void emit_struct_def(Gen *g, const Type *t) {
     codegen_emit_member(g, field->type, fname, "", 2);
     free(fname);
   }
-  strbuf_appendf(out, "} %s;\n\n", codegen_name_of(g, t));
+  strbuf_appendf(out, "} %s;\n\n", cname);
 }
 
 static void emit_union_def(Gen *g, const Type *t) {
@@ -296,9 +307,6 @@ void codegen_emit_derived_defs(Gen *g, const Type *t, bool is_root) {
     for (size_t i = 0; i < t->struct_fields.len; i++) {
       codegen_emit_derived_defs(g, t->struct_fields.fields[i].type, false);
     }
-    if (!is_root) {
-      emit_struct_def(g, t);
-    }
     break;
   case TypeKind_UNION:
     for (size_t i = 0; i < t->union_members.len; i++) {
@@ -338,7 +346,7 @@ void codegen_emit_root_def(Gen *g, const UserType *ut, const char *cname) {
     emit_schema_enum_def(g, t);
     break;
   case TypeKind_STRUCT:
-    emit_struct_def(g, t);
+    emit_struct_def(g, t, cname);
     break;
   case TypeKind_UNION:
     emit_union_def(g, t);

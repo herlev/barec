@@ -39,7 +39,8 @@ static void emit_function_decls(Gen *g, const char *cname) {
   assert(root_names != nullptr);
   VEC(GenNameView) all = {};
   for (size_t i = 0; i < g->schema->len; i++) {
-    if (root_names[i] != nullptr && !codegen_is_aggregate(g->schema->types[i].type->kind)) {
+    TypeKind kind = g->schema->types[i].type->kind;
+    if (root_names[i] != nullptr && kind != TypeKind_ENUM && kind != TypeKind_UNION) {
       VEC_PUSH(&all, root_names[i]);
     }
   }

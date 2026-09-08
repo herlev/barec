@@ -138,18 +138,6 @@ BareStatus address_encode(const Address *value, uint8_t buf[], size_t cap, size_
   return BareStatus_OK;
 }
 
-static BareStatus customer_orders_item_read(BareReader *r, CustomerOrdersItem *out) {
-  BARE_TRY(bare_read_i64(r, &out->order_id));
-  BARE_TRY(bare_read_i32(r, &out->quantity));
-  return BareStatus_OK;
-}
-
-static BareStatus customer_orders_item_write(BareWriter *w, const CustomerOrdersItem *value) {
-  BARE_TRY(bare_write_i64(w, value->order_id));
-  BARE_TRY(bare_write_i32(w, value->quantity));
-  return BareStatus_OK;
-}
-
 BareStatus customer_read(BareReader *r, Customer *out) {
   BARE_TRY(bare_read_str(r, out->name.data, 64, &out->name.len));
   BARE_TRY(bare_read_str(r, out->email.data, 64, &out->email.len));
@@ -162,7 +150,8 @@ BareStatus customer_read(BareReader *r, Customer *out) {
     }
     out->orders.len = (uint32_t)n0;
     for (uint32_t i0 = 0; i0 < out->orders.len; i0++) {
-      BARE_TRY(customer_orders_item_read(r, &out->orders.items[i0]));
+      BARE_TRY(bare_read_i64(r, &out->orders.items[i0].order_id));
+      BARE_TRY(bare_read_i32(r, &out->orders.items[i0].quantity));
     }
   }
   {
@@ -200,7 +189,8 @@ BareStatus customer_write(BareWriter *w, const Customer *value) {
   }
   BARE_TRY(bare_write_uint(w, value->orders.len));
   for (uint32_t i0 = 0; i0 < value->orders.len; i0++) {
-    BARE_TRY(customer_orders_item_write(w, &value->orders.items[i0]));
+    BARE_TRY(bare_write_i64(w, value->orders.items[i0].order_id));
+    BARE_TRY(bare_write_i32(w, value->orders.items[i0].quantity));
   }
   if (value->metadata.len > 8) {
     return BareStatus_CAP_EXCEEDED;

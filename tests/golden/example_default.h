@@ -42,16 +42,14 @@ typedef struct {
 } Address;
 
 typedef struct {
-  int64_t order_id;
-  int32_t quantity;
-} CustomerOrdersItem;
-
-typedef struct {
   BareStr64 name;
   BareStr64 email;
   Address address;
   struct {
-    CustomerOrdersItem items[8];
+    struct {
+      int64_t order_id;
+      int32_t quantity;
+    } items[8];
     uint32_t len;
   } orders;
   struct {

@@ -172,7 +172,6 @@ void codegen_scan_type(Gen *g, const Type *t, StrBuf *path) {
     VEC_PUSH(&g->names, ((TypeName){.type = t, .name = render_path_type_name(g, path)}));
     break;
   case TypeKind_STRUCT: {
-    VEC_PUSH(&g->names, ((TypeName){.type = t, .name = render_path_type_name(g, path)}));
     for (size_t i = 0; i < t->struct_fields.len; i++) {
       size_t saved = path_push(path, t->struct_fields.fields[i].name);
       codegen_scan_type(g, t->struct_fields.fields[i].type, path);
