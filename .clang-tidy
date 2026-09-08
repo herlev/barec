@@ -18,4 +18,5 @@ Checks: >
 WarningsAsErrors: '*'
 CheckOptions:
   - { key: readability-function-cognitive-complexity.IgnoreMacros, value: true }
+  - { key: misc-include-cleaner.IgnoreHeaders, value: 'asm-generic/.*;linux/errno\.h;bits/errno.*' }
 HeaderFilterRegex: '(src|runtime)/.*\.h$'

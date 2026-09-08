@@ -9,6 +9,7 @@
 #include "util/strbuf.h"
 #include "util/types.h"
 
+#include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -50,37 +51,51 @@ static void stem_of(const char *path, StrBuf *out) {
   strbuf_append_str(out, (Str){.data = base, .len = len});
 }
 
-static void make_dirs(const char *path) {
+[[nodiscard]] static bool make_dirs(const char *path) {
   StrBuf partial = {};
   size_t n = strlen(path);
-  for (size_t i = 0; i <= n; i++) {
+  bool ok = true;
+  for (size_t i = 0; i <= n && ok; i++) {
     if ((i == n || path[i] == '/') && partial.len > 0) {
-      (void)mkdir(partial.data, 0755);
+      if (mkdir(partial.data, 0755) != 0 && errno != EEXIST) {
+        (void)fprintf(stderr, "%s: error: cannot create directory '%s': %s\n", cli_prog_name(),
+                      partial.data, strerror(errno));
+        ok = false;
+      }
     }
     if (i < n) {
       strbuf_append_char(&partial, path[i]);
     }
   }
   strbuf_free(&partial);
+  return ok;
 }
 
 [[nodiscard]] static bool write_output(const char *path, const char *data, size_t len) {
   FILE *file = fopen(path, "wb");
   if (file == nullptr) {
-    (void)fprintf(stderr, "%s: error: cannot write '%s'\n", cli_prog_name(), path);
+    (void)fprintf(stderr, "%s: error: cannot write '%s': %s\n", cli_prog_name(), path,
+                  strerror(errno));
     return false;
   }
   bool ok = fwrite(data, 1, len, file) == len;
-  ok = (bool)(fclose(file) == 0 && ok);
+  int write_errno = errno;
+  if (fclose(file) != 0) {
+    write_errno = errno;
+    ok = false;
+  }
   if (!ok) {
-    (void)fprintf(stderr, "%s: error: cannot write '%s'\n", cli_prog_name(), path);
+    (void)fprintf(stderr, "%s: error: cannot write '%s': %s\n", cli_prog_name(), path,
+                  strerror(write_errno));
   }
   return ok;
 }
 
 [[nodiscard]] static bool write_generated(const Cli *cli, const char *out_dir, const char *name,
                                           const StrBuf *header, const StrBuf *source) {
-  make_dirs(out_dir);
+  if (!make_dirs(out_dir)) {
+    return false;
+  }
   StrBuf path = {};
   strbuf_appendf(&path, "%s/%s.h", out_dir, name);
   bool ok = write_output(path.data, header->data, header->len);

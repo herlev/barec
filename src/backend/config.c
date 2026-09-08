@@ -4,6 +4,7 @@
 #include "util/types.h"
 #include "util/vec.h"
 
+#include <errno.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -312,7 +313,7 @@ bool config_load_text(Config *cfg, const char *text, size_t len, Diag *diag) {
 bool config_load(Config *cfg, const char *path, Diag *diag) {
   FILE *file = fopen(path, "rb");
   if (file == nullptr) {
-    diag_set(diag, (SrcLoc){}, "cannot open config file '%s'", path);
+    diag_set(diag, (SrcLoc){}, "cannot open config file '%s': %s", path, strerror(errno));
     return false;
   }
   char *text = nullptr;
@@ -333,7 +334,7 @@ bool config_load(Config *cfg, const char *path, Diag *diag) {
     len += n;
     if (n < want) {
       if (ferror(file) != 0) {
-        diag_set(diag, (SrcLoc){}, "cannot read config file '%s'", path);
+        diag_set(diag, (SrcLoc){}, "cannot read config file '%s': %s", path, strerror(errno));
         ok = false;
       }
       break;

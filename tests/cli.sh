@@ -32,6 +32,20 @@ EOF
 if "$BAREC" check "$TMP/bad.bare" 2> "$TMP/err"; then exit 1; fi
 grep -q "bad.bare:1:13: error: unknown type 'Missing'" "$TMP/err"
 
+if "$BAREC" check "$TMP/absent.bare" 2> "$TMP/err"; then exit 1; fi
+grep -qF "cannot open '$TMP/absent.bare': No such file or directory" "$TMP/err"
+
+if "$BAREC" generate "$TMP/msg.bare" -c "$TMP/absent.conf" 2> "$TMP/err"; then exit 1; fi
+grep -qF "cannot open config file '$TMP/absent.conf': No such file or directory" "$TMP/err"
+
+mkdir "$TMP/ro"
+chmod 555 "$TMP/ro"
+if [ ! -w "$TMP/ro" ]; then
+  if "$BAREC" generate "$TMP/msg.bare" -o "$TMP/ro/sub" 2> "$TMP/err"; then exit 1; fi
+  grep -qF "cannot create directory '$TMP/ro/sub': Permission denied" "$TMP/err"
+fi
+chmod 755 "$TMP/ro"
+
 "$BAREC" "$TMP/msg.bare"
 test -f "$TMP/msg.h"
 test -f "$TMP/msg.c"
