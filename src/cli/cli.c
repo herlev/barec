@@ -1,6 +1,7 @@
 #include "cli/cli.h"
 
 #include "backend/config.h"
+#include "util/macros.h"
 
 #include <stdarg.h>
 #include <stdio.h>
@@ -137,17 +138,55 @@ static void parse_generate_option(Cli *cli, int argc, char **argv, int *i) {
   }
 }
 
-static void handle_help_version(int argc, char **argv) {
-  for (int i = 1; i < argc; i++) {
-    if (strcmp(argv[i], "-h") == 0 || strcmp(argv[i], "--help") == 0) {
-      print_help(stdout);
-      exit(0);
-    }
-    if (strcmp(argv[i], "-V") == 0 || strcmp(argv[i], "--version") == 0) {
-      printf("%s %s\n", prog_name, BAREC_VERSION);
-      exit(0);
+static void maybe_help_version(const char *arg) {
+  if (strcmp(arg, "-h") == 0 || strcmp(arg, "--help") == 0) {
+    print_help(stdout);
+    exit(0);
+  }
+  if (strcmp(arg, "-V") == 0 || strcmp(arg, "--version") == 0) {
+    printf("%s %s\n", prog_name, BAREC_VERSION);
+    exit(0);
+  }
+}
+
+static size_t edit_distance(const char *a, const char *b) {
+  size_t la = strlen(a);
+  size_t lb = strlen(b);
+  enum { MAX = 15 };
+  if (la > MAX || lb > MAX) {
+    return MAX;
+  }
+  size_t d[MAX + 1];
+  for (size_t j = 0; j <= lb; j++) {
+    d[j] = j;
+  }
+  for (size_t i = 1; i <= la; i++) {
+    size_t diag = d[0];
+    d[0] = i;
+    for (size_t j = 1; j <= lb; j++) {
+      size_t sub = diag + (size_t)(a[i - 1] != b[j - 1]);
+      diag = d[j];
+      size_t del = d[j] + 1;
+      size_t ins = d[j - 1] + 1;
+      d[j] = sub < del ? sub : del;
+      d[j] = ins < d[j] ? ins : d[j];
     }
   }
+  return d[lb];
+}
+
+static const char *_Nullable suggest_command(const char *arg) {
+  static const char *const NAMES[] = {"generate", "check", "config"};
+  const char *best = nullptr;
+  size_t best_distance = 3;
+  for (size_t i = 0; i < ARRAY_LEN(NAMES); i++) {
+    size_t distance = edit_distance(arg, NAMES[i]);
+    if (distance < best_distance) {
+      best_distance = distance;
+      best = NAMES[i];
+    }
+  }
+  return best;
 }
 
 static void parse_command(Cli *cli, const char *arg) {
@@ -158,25 +197,39 @@ static void parse_command(Cli *cli, const char *arg) {
   } else if (strcmp(arg, "config") == 0) {
     cli->command = CliCommand_CONFIG;
   } else if (arg[0] != '-') {
+    const char *near = suggest_command(arg);
+    if (near != nullptr && strchr(arg, '.') == nullptr) {
+      usage_error("unknown command '%s', did you mean '%s'?", arg, near);
+    }
     cli->command = CliCommand_GENERATE;
     cli->generate.schema_path = arg;
   } else {
+    maybe_help_version(arg);
     usage_error("expected a command or schema file, got '%s'", arg);
   }
 }
 
 Cli cli_parse_args(int argc, char **argv) {
   set_prog_name(argc, argv);
-  handle_help_version(argc, argv);
   if (argc < 2) {
     print_help(stderr);
     exit(2);
   }
   Cli cli = {};
-  parse_command(&cli, argv[1]);
+  bool end_of_options = false;
+  if (strcmp(argv[1], "--") == 0) {
+    end_of_options = true;
+    cli.command = CliCommand_GENERATE;
+  } else {
+    parse_command(&cli, argv[1]);
+  }
   for (int i = 2; i < argc; i++) {
     const char *arg = argv[i];
-    if (arg[0] != '-') {
+    if (!end_of_options && strcmp(arg, "--") == 0) {
+      end_of_options = true;
+      continue;
+    }
+    if (end_of_options || arg[0] != '-') {
       const char **slot = &cli.generate.schema_path;
       if (cli.command == CliCommand_CHECK) {
         slot = &cli.check.schema_path;
@@ -189,6 +242,7 @@ Cli cli_parse_args(int argc, char **argv) {
       *slot = arg;
       continue;
     }
+    maybe_help_version(arg);
     if (cli.command != CliCommand_GENERATE) {
       usage_error("unknown option '%s'", arg);
     }

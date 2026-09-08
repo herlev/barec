@@ -17,6 +17,11 @@ if "$BAREC" generate a.bare b.bare 2> /dev/null; then exit 1; fi
 if "$BAREC" generate a.bare --std c11 2> /dev/null; then exit 1; fi
 if "$BAREC" config extra 2> /dev/null; then exit 1; fi
 
+if "$BAREC" chek 2> "$TMP/err"; then exit 1; fi
+grep -q "unknown command 'chek', did you mean 'check'?" "$TMP/err"
+if "$BAREC" generte a.bare 2> "$TMP/err"; then exit 1; fi
+grep -q "did you mean 'generate'?" "$TMP/err"
+
 cat > "$TMP/msg.bare" << 'EOF'
 type Point struct {
   x: f32
@@ -25,6 +30,14 @@ type Point struct {
 EOF
 
 "$BAREC" check "$TMP/msg.bare"
+"$BAREC" check -- "$TMP/msg.bare"
+"$BAREC" check "$TMP/msg.bare" -h | grep -q "^Usage:"
+"$BAREC" -- "$TMP/msg.bare"
+test -f "$TMP/msg.h"
+rm "$TMP/msg.h" "$TMP/msg.c"
+
+"$BAREC" generate "$TMP/msg.bare" -o "$TMP/vh" -n -h
+test -f "$TMP/vh/-h.h"
 
 cat > "$TMP/bad.bare" << 'EOF'
 type Broken Missing

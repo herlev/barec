@@ -93,7 +93,7 @@ void codegen_emit_source_content(Gen *g, char *const root_names[], const char *b
     emit_decode_fn(g, root_names[i]);
     emit_encode_fn(g, root_names[i]);
   }
-  if (out->len >= 1 && out->data[out->len - 1] == '\n' && out->data[out->len - 2] == '\n') {
+  if (out->len >= 2 && out->data[out->len - 1] == '\n' && out->data[out->len - 2] == '\n') {
     out->len -= 1;
     out->data[out->len] = '\0';
   }
