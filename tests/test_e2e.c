@@ -39,7 +39,7 @@ static void reencode_exact(const Person *p, const uint8_t expect[], size_t expec
 }
 
 static void test_customer_message(void) {
-  Person p = {0};
+  Person p = {};
   assert(person_decode(&p, CUSTOMER_MSG, sizeof(CUSTOMER_MSG)) == BareStatus_OK);
   assert(p.tag == PersonTag_CUSTOMER);
   const Customer *c = &p.value.customer;
@@ -57,7 +57,7 @@ static void test_customer_message(void) {
 }
 
 static void test_employee_message(void) {
-  Person p = {0};
+  Person p = {};
   assert(person_decode(&p, EMPLOYEE_MSG, sizeof(EMPLOYEE_MSG)) == BareStatus_OK);
   assert(p.tag == PersonTag_EMPLOYEE);
   const Employee *e = &p.value.employee;
@@ -78,14 +78,14 @@ static void test_str_value_macro(void) {
 
 static void test_terminated_employee_message(void) {
   const uint8_t msg[] = {0x02};
-  Person p = {0};
+  Person p = {};
   assert(person_decode(&p, msg, sizeof(msg)) == BareStatus_OK);
   assert(p.tag == PersonTag_TERMINATED_EMPLOYEE);
   reencode_exact(&p, msg, sizeof(msg));
 }
 
 static void test_full_roundtrip(void) {
-  Person p = {0};
+  Person p = {};
   p.tag = PersonTag_EMPLOYEE;
   Employee *e = &p.value.employee;
   set_str_field(&e->name, "Ada Lovelace");
@@ -111,7 +111,7 @@ static void test_full_roundtrip(void) {
   size_t written = 0;
   assert(person_encode(&p, buf, sizeof(buf), &written) == BareStatus_OK);
 
-  Person q = {0};
+  Person q = {};
   assert(person_decode(&q, buf, written) == BareStatus_OK);
   assert(q.tag == PersonTag_EMPLOYEE);
   const Employee *d = &q.value.employee;
@@ -132,7 +132,7 @@ static void test_errors(void) {
   assert(department_decode(&dept, jsmith, 1) == BareStatus_OK);
   assert(dept == Department_JSMITH);
 
-  Person p = {0};
+  Person p = {};
   const uint8_t bad_tag[] = {0x07};
   assert(person_decode(&p, bad_tag, 1) == BareStatus_INVALID_TAG);
 
@@ -141,7 +141,7 @@ static void test_errors(void) {
 
   assert(person_decode(&p, CUSTOMER_MSG, sizeof(CUSTOMER_MSG) - 1) == BareStatus_SHORT_READ);
 
-  Person dup = {0};
+  Person dup = {};
   dup.tag = PersonTag_CUSTOMER;
   Customer *c = &dup.value.customer;
   set_str_field(&c->name, "x");

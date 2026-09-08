@@ -128,12 +128,12 @@ BARE_NODISCARD bool bare_utf8_valid(const uint8_t data[], size_t len);
 #define BARE_STR_EQ(field, text) bare_str_eq((field)->data, (field)->len, (text))
 #define BARE_STR_ARG(field) (int)(field)->len, (field)->data
 
-/// Assigns a string literal to a fixed-capacity string field. A literal
-/// longer than the field's capacity is rejected at compile time, so unlike
-/// BARE_STR_SET there is no status to check. Literals only.
+/// Assigns a string literal to a fixed-capacity string field through a
+/// pointer, like BARE_STR_SET. A literal longer than the field's capacity
+/// is rejected at compile time, so there is no status to check.
 #ifdef BARE_TYPEOF
 #define BARE_STR_LIT(field, lit)                                                                   \
-  ((void)((field) = (BARE_TYPEOF(field)){.data = "" lit, .len = sizeof(lit) - 1}))
+  ((void)(*(field) = (BARE_TYPEOF(*(field))){.data = "" lit, .len = sizeof(lit) - 1}))
 #endif
 
 /// Copies NUL-terminated text into a cap-bounded field, CAP_EXCEEDED when

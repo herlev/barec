@@ -1,6 +1,8 @@
 #include "backend/config.h"
 
+#include "util/ascii.h"
 #include "util/diag.h"
+#include "util/file.h"
 #include "util/types.h"
 #include "util/vec.h"
 
@@ -45,11 +47,6 @@ static Str trim(Str s) {
   return s;
 }
 
-static bool is_ident_char(char c) {
-  return (bool)((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') ||
-                c == '_');
-}
-
 [[nodiscard]] static bool parse_case(Loader *ld, Str value, CaseStyle *out) {
   if (str_eq(value, STR("snake"))) {
     *out = CaseStyle_SNAKE;
@@ -87,17 +84,23 @@ static bool is_ident_char(char c) {
   return true;
 }
 
-[[nodiscard]] static bool parse_prefix(Loader *ld, Str value) {
+bool config_prefix_ok(Str value) {
   for (size_t i = 0; i < value.len; i++) {
     char c = value.data[i];
-    bool valid = (bool)(is_ident_char(c) && !(i == 0 && c >= '0' && c <= '9'));
-    if (!valid) {
-      diag_set(ld->diag, loc_of(ld, value.data),
-               "invalid prefix '%.*s', expected letters, digits, and underscores not starting "
-               "with a digit",
-               (int)value.len, value.data);
+    if (!ascii_is_ident(c) || (i == 0 && ascii_is_digit(c))) {
       return false;
     }
+  }
+  return true;
+}
+
+[[nodiscard]] static bool parse_prefix(Loader *ld, Str value) {
+  if (!config_prefix_ok(value)) {
+    diag_set(ld->diag, loc_of(ld, value.data),
+             "invalid prefix '%.*s', expected letters, digits, and underscores not starting "
+             "with a digit",
+             (int)value.len, value.data);
+    return false;
   }
   ld->cfg.prefix = value;
   return true;
@@ -105,7 +108,7 @@ static bool is_ident_char(char c) {
 
 [[nodiscard]] static bool parse_type_suffix(Loader *ld, Str value) {
   for (size_t i = 0; i < value.len; i++) {
-    if (!is_ident_char(value.data[i])) {
+    if (!ascii_is_ident(value.data[i])) {
       diag_set(ld->diag, loc_of(ld, value.data),
                "invalid type suffix '%.*s', expected letters, digits, and underscores",
                (int)value.len, value.data);
@@ -227,7 +230,7 @@ static bool is_ident_char(char c) {
 
 [[nodiscard]] static bool load_override_key(Loader *ld, Str key, Str value) {
   for (size_t i = 0; i < key.len; i++) {
-    if (!is_ident_char(key.data[i]) && key.data[i] != '.') {
+    if (!ascii_is_ident(key.data[i]) && key.data[i] != '.') {
       diag_set(ld->diag, loc_of(ld, key.data), "invalid override path '%.*s'", (int)key.len,
                key.data);
       return false;
@@ -330,39 +333,13 @@ bool config_load_text(Config *cfg, const char *text, size_t len, Diag *diag) {
 }
 
 bool config_load(Config *cfg, const char *path, Diag *diag) {
-  FILE *file = fopen(path, "rb");
-  if (file == nullptr) {
+  size_t len = 0;
+  char *text = file_read(path, &len);
+  if (text == nullptr) {
     diag_set(diag, (SrcLoc){}, "cannot open config file '%s': %s", path, strerror(errno));
     return false;
   }
-  char *text = nullptr;
-  size_t len = 0;
-  size_t cap = 0;
-  bool ok = true;
-  for (;;) {
-    if (len == cap) {
-      cap = cap == 0 ? 4096 : cap * 2;
-      char *grown = realloc(text, cap);
-      if (grown == nullptr) {
-        abort();
-      }
-      text = grown;
-    }
-    size_t want = cap - len;
-    size_t n = fread(text + len, 1, want, file);
-    len += n;
-    if (n < want) {
-      if (ferror(file) != 0) {
-        diag_set(diag, (SrcLoc){}, "cannot read config file '%s': %s", path, strerror(errno));
-        ok = false;
-      }
-      break;
-    }
-  }
-  (void)fclose(file);
-  if (ok) {
-    ok = config_load_text(cfg, text, len, diag);
-  }
+  bool ok = config_load_text(cfg, text, len, diag);
   free(text);
   return ok;
 }

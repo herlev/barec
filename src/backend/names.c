@@ -1,30 +1,11 @@
 #include "backend/names.h"
 
 #include "backend/config.h"
+#include "util/ascii.h"
 #include "util/strbuf.h"
 #include "util/types.h"
 
 #include <stddef.h>
-
-static bool is_upper(char c) { return (bool)(c >= 'A' && c <= 'Z'); }
-
-static bool is_lower(char c) { return (bool)(c >= 'a' && c <= 'z'); }
-
-static bool is_digit(char c) { return (bool)(c >= '0' && c <= '9'); }
-
-static char to_lower(char c) {
-  if (is_upper(c)) {
-    return (char)(c + ('a' - 'A'));
-  }
-  return c;
-}
-
-static char to_upper(char c) {
-  if (is_lower(c)) {
-    return (char)(c - ('a' - 'A'));
-  }
-  return c;
-}
 
 typedef struct {
   Str src;
@@ -42,15 +23,15 @@ static bool next_word(WordIter *it, Str *out) {
   }
   size_t start = it->pos;
   it->pos += 1;
-  if (is_upper(data[start]) && it->pos < len && is_upper(data[it->pos])) {
-    while (it->pos < len && (is_upper(data[it->pos]) || is_digit(data[it->pos]))) {
+  if (ascii_is_upper(data[start]) && it->pos < len && ascii_is_upper(data[it->pos])) {
+    while (it->pos < len && (ascii_is_upper(data[it->pos]) || ascii_is_digit(data[it->pos]))) {
       it->pos += 1;
     }
-    if (it->pos < len && is_lower(data[it->pos])) {
+    if (it->pos < len && ascii_is_lower(data[it->pos])) {
       it->pos -= 1;
     }
   } else {
-    while (it->pos < len && (is_lower(data[it->pos]) || is_digit(data[it->pos]))) {
+    while (it->pos < len && (ascii_is_lower(data[it->pos]) || ascii_is_digit(data[it->pos]))) {
       it->pos += 1;
     }
   }
@@ -70,23 +51,23 @@ void name_render(Str name, CaseStyle style, StrBuf *out) {
       char c = word.data[i];
       switch (style) {
       case CaseStyle_SNAKE:
-        c = to_lower(c);
+        c = ascii_to_lower(c);
         break;
       case CaseStyle_SCREAMING:
-        c = to_upper(c);
+        c = ascii_to_upper(c);
         break;
       case CaseStyle_PASCAL:
         if (i == 0) {
-          c = to_upper(c);
+          c = ascii_to_upper(c);
         } else {
-          c = to_lower(c);
+          c = ascii_to_lower(c);
         }
         break;
       case CaseStyle_CAMEL:
         if (i == 0 && !first) {
-          c = to_upper(c);
+          c = ascii_to_upper(c);
         } else {
-          c = to_lower(c);
+          c = ascii_to_lower(c);
         }
         break;
       }

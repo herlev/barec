@@ -1,8 +1,10 @@
 #include "frontend/lexer.h"
 
+#include "util/ascii.h"
 #include "util/diag.h"
 #include "util/macros.h"
 #include "util/types.h"
+#include "util/vec.h"
 
 #include <assert.h>
 #include <stdint.h>
@@ -15,12 +17,6 @@ typedef struct {
   size_t pos;
   SrcLoc loc;
 } Lexer;
-
-typedef struct {
-  Token *ptr;
-  size_t len;
-  size_t cap;
-} TokenVec;
 
 static const char *const KEYWORD_NAMES[] = {
     [TokenKind_KW_TYPE] = "type",
@@ -79,30 +75,10 @@ static void skip_ws_and_comments(Lexer *lx) {
   }
 }
 
-static bool is_alpha(char c) { return (bool)((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z')); }
-
-static bool is_digit(char c) { return (bool)(c >= '0' && c <= '9'); }
-
-static bool is_ident_char(char c) { return (bool)(is_alpha(c) || is_digit(c) || c == '_'); }
-
-static void vec_push(TokenVec *vec, Token token) {
-  if (vec->len == vec->cap) {
-    size_t new_cap = vec->cap == 0 ? 64 : vec->cap * 2;
-    Token *grown = realloc(vec->ptr, new_cap * sizeof(Token));
-    if (grown == nullptr) {
-      abort();
-    }
-    vec->ptr = grown;
-    vec->cap = new_cap;
-  }
-  vec->ptr[vec->len] = token;
-  vec->len += 1;
-}
-
 static Token lex_ident(Lexer *lx) {
   SrcLoc loc = lx->loc;
   size_t start = lx->pos;
-  while (!at_end(lx) && is_ident_char(peek(lx))) {
+  while (!at_end(lx) && ascii_is_ident(peek(lx))) {
     advance(lx);
   }
   Str text = {.data = lx->src + start, .len = lx->pos - start};
@@ -122,7 +98,7 @@ static Token lex_ident(Lexer *lx) {
   SrcLoc loc = lx->loc;
   size_t start = lx->pos;
   u64 value = 0;
-  while (!at_end(lx) && is_digit(peek(lx))) {
+  while (!at_end(lx) && ascii_is_digit(peek(lx))) {
     u64 digit = (u64)(peek(lx) - '0');
     if (value > (UINT64_MAX - digit) / 10) {
       diag_set(diag, loc, "integer literal does not fit in 64 bits");
@@ -131,7 +107,7 @@ static Token lex_ident(Lexer *lx) {
     value = (value * 10) + digit;
     advance(lx);
   }
-  if (!at_end(lx) && is_ident_char(peek(lx))) {
+  if (!at_end(lx) && ascii_is_ident(peek(lx))) {
     diag_set(diag, lx->loc, "missing whitespace after integer literal");
     return false;
   }
@@ -144,24 +120,24 @@ static Token lex_ident(Lexer *lx) {
 
 bool lexer_tokenize(const char *src, size_t len, TokenList *out, Diag *diag) {
   Lexer lx = {.src = src, .len = len, .loc = {.line = 1, .column = 1}};
-  TokenVec vec = {};
+  VEC(Token) vec = {};
   for (;;) {
     skip_ws_and_comments(&lx);
     if (at_end(&lx)) {
-      vec_push(&vec, (Token){.kind = TokenKind_EOF, .loc = lx.loc});
+      VEC_PUSH(&vec, ((Token){.kind = TokenKind_EOF, .loc = lx.loc}));
       break;
     }
     char c = peek(&lx);
-    if (is_alpha(c)) {
-      vec_push(&vec, lex_ident(&lx));
+    if (ascii_is_alpha(c)) {
+      VEC_PUSH(&vec, lex_ident(&lx));
       continue;
     }
-    if (is_digit(c)) {
+    if (ascii_is_digit(c)) {
       Token token;
       if (!lex_integer(&lx, &token, diag)) {
         goto fail;
       }
-      vec_push(&vec, token);
+      VEC_PUSH(&vec, token);
       continue;
     }
     TokenKind kind;
@@ -206,7 +182,7 @@ bool lexer_tokenize(const char *src, size_t len, TokenList *out, Diag *diag) {
     }
     Token token = {.kind = kind, .text = {.data = lx.src + lx.pos, .len = 1}, .loc = lx.loc};
     advance(&lx);
-    vec_push(&vec, token);
+    VEC_PUSH(&vec, token);
   }
   *out = (TokenList){.tokens = vec.ptr, .len = vec.len};
   return true;

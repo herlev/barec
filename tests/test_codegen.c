@@ -33,7 +33,7 @@ static Generated generate_ok(const char *src, const Config *cfg) {
   assert(parser_parse(src, strlen(src), &schema, &diag));
   assert(check_schema(&schema, &diag));
   Generated gen = {};
-  assert(codegen_generate(&schema, cfg, "example", &gen.header, &gen.source, &diag));
+  assert(codegen_generate(&schema, cfg, "example_default", &gen.header, &gen.source, &diag));
   schema_free(&schema);
   return gen;
 }
@@ -44,7 +44,7 @@ static Diag generate_fail(const char *src, const Config *cfg) {
   assert(parser_parse(src, strlen(src), &schema, &diag));
   assert(check_schema(&schema, &diag));
   Generated gen = {};
-  assert(!codegen_generate(&schema, cfg, "example", &gen.header, &gen.source, &diag));
+  assert(!codegen_generate(&schema, cfg, "example_default", &gen.header, &gen.source, &diag));
   strbuf_free(&gen.header);
   strbuf_free(&gen.source);
   schema_free(&schema);

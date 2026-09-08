@@ -7,9 +7,9 @@
 
 static BareStatus server_handle(const uint8_t req_wire[], size_t req_len, uint8_t res_wire[],
                                 size_t res_cap, size_t *res_len) {
-  Request req = {0};
+  Request req = {};
   BARE_TRY(request_decode(&req, req_wire, req_len));
-  Response res = {0};
+  Response res = {};
   switch (req.tag) {
   case RequestTag_PING:
     res.tag = ResponseTag_PONG;
@@ -23,7 +23,7 @@ static BareStatus server_handle(const uint8_t req_wire[], size_t req_len, uint8_
   case RequestTag_SET_LABEL:
     if (req.value.set_label.label.len == 0) {
       res.tag = ResponseTag_ERROR;
-      BARE_STR_LIT(res.value.error.message, "label must not be empty");
+      BARE_STR_LIT(&res.value.error.message, "label must not be empty");
     } else {
       res.tag = ResponseTag_OK;
     }
@@ -64,7 +64,7 @@ static int exchange(const Request *req) {
     return 1;
   }
   printf("server -> client: %zu bytes\n", res_len);
-  Response res = {0};
+  Response res = {};
   if (response_decode(&res, res_wire, res_len) != BareStatus_OK) {
     return 1;
   }
@@ -73,10 +73,10 @@ static int exchange(const Request *req) {
 }
 
 int main(void) {
-  Request ping = {0};
+  Request ping = {};
   ping.tag = RequestTag_PING;
 
-  Request read_temp = {0};
+  Request read_temp = {};
   read_temp.tag = RequestTag_READ_TEMPERATURE;
   read_temp.value.read_temperature.device = 7;
 
@@ -85,7 +85,7 @@ int main(void) {
       .value.set_label = {.device = 7, .label = BARE_STR64("greenhouse")},
   };
 
-  Request bad_label = {0};
+  Request bad_label = {};
   bad_label.tag = RequestTag_SET_LABEL;
   bad_label.value.set_label.device = 7;
 

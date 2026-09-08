@@ -2,6 +2,7 @@
 
 #include "frontend/lexer.h"
 #include "frontend/schema.h"
+#include "util/ascii.h"
 #include "util/diag.h"
 #include "util/optional.h"
 #include "util/types.h"
@@ -59,20 +60,12 @@ static void err_unexpected(Parser *p, const char *expected) {
 
 static bool is_keyword(TokenKind kind) { return kind < TokenKind_IDENT; }
 
-static bool is_upper_char(char c) { return (bool)(c >= 'A' && c <= 'Z'); }
-
-static bool is_lower_char(char c) { return (bool)(c >= 'a' && c <= 'z'); }
-
-static bool is_alpha_char(char c) { return (bool)(is_upper_char(c) || is_lower_char(c)); }
-
-static bool is_digit_char(char c) { return (bool)(c >= '0' && c <= '9'); }
-
 static bool is_type_name(Str s) {
-  if (s.len == 0 || !is_upper_char(s.data[0])) {
+  if (s.len == 0 || !ascii_is_upper(s.data[0])) {
     return false;
   }
   for (size_t i = 1; i < s.len; i++) {
-    if (!is_alpha_char(s.data[i]) && !is_digit_char(s.data[i])) {
+    if (!ascii_is_alpha(s.data[i]) && !ascii_is_digit(s.data[i])) {
       return false;
     }
   }
@@ -80,12 +73,12 @@ static bool is_type_name(Str s) {
 }
 
 static bool is_enum_value_name(Str s) {
-  if (s.len == 0 || !is_upper_char(s.data[0])) {
+  if (s.len == 0 || !ascii_is_upper(s.data[0])) {
     return false;
   }
   for (size_t i = 1; i < s.len; i++) {
     char c = s.data[i];
-    if (!is_upper_char(c) && !is_digit_char(c) && c != '_') {
+    if (!ascii_is_upper(c) && !ascii_is_digit(c) && c != '_') {
       return false;
     }
   }
@@ -93,12 +86,12 @@ static bool is_enum_value_name(Str s) {
 }
 
 static bool is_field_name(Str s) {
-  if (s.len == 0 || !is_lower_char(s.data[0])) {
+  if (s.len == 0 || !ascii_is_lower(s.data[0])) {
     return false;
   }
   for (size_t i = 1; i < s.len; i++) {
     char c = s.data[i];
-    if (!is_alpha_char(c) && !is_digit_char(c) && c != '_') {
+    if (!ascii_is_alpha(c) && !ascii_is_digit(c) && c != '_') {
       return false;
     }
   }

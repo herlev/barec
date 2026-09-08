@@ -269,10 +269,10 @@ static void test_str_helpers(void) {
   assert(field.len == 0);
   assert(BARE_STR_EQ(&field, ""));
 
-  BARE_STR_LIT(field, "lit");
+  BARE_STR_LIT(&field, "lit");
   assert(field.len == 3);
   assert(BARE_STR_EQ(&field, "lit"));
-  BARE_STR_LIT(field, "12345678");
+  BARE_STR_LIT(&field, "12345678");
   assert(field.len == 8);
 }
 

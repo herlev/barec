@@ -5,49 +5,13 @@
 #include "frontend/parser.h"
 #include "frontend/schema.h"
 #include "util/diag.h"
+#include "util/file.h"
 
 #include <errno.h>
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
-char *cmd_read_file(const char *path, size_t *out_len) {
-  FILE *file = fopen(path, "rb");
-  if (file == nullptr) {
-    return nullptr;
-  }
-  char *text = nullptr;
-  size_t len = 0;
-  size_t cap = 0;
-  bool ok = true;
-  for (;;) {
-    if (len == cap) {
-      cap = cap == 0 ? 4096 : cap * 2;
-      char *grown = realloc(text, cap);
-      if (grown == nullptr) {
-        abort();
-      }
-      text = grown;
-    }
-    size_t want = cap - len;
-    size_t n = fread(text + len, 1, want, file);
-    len += n;
-    if (n < want) {
-      ok = ferror(file) == 0;
-      break;
-    }
-  }
-  int read_errno = errno;
-  (void)fclose(file);
-  if (!ok) {
-    free(text);
-    errno = read_errno;
-    return nullptr;
-  }
-  *out_len = len;
-  return text;
-}
 
 void cmd_print_diag(const char *path, const Diag *diag) {
   if (diag->loc.line > 0) {
@@ -60,7 +24,7 @@ void cmd_print_diag(const char *path, const Diag *diag) {
 
 bool cmd_load_schema(const char *path, char **text_out, Schema *schema) {
   size_t len = 0;
-  char *text = cmd_read_file(path, &len);
+  char *text = file_read(path, &len);
   if (text == nullptr) {
     (void)fprintf(stderr, "%s: error: cannot open '%s': %s\n", cli_prog_name(), path,
                   strerror(errno));

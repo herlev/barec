@@ -64,4 +64,8 @@ Config config_default(void);
 /// Reads path and applies config_load_text.
 [[nodiscard]] bool config_load(Config *cfg, const char *path, Diag *diag);
 
+/// Whether value is a valid identifier prefix: letters, digits, and
+/// underscores not starting with a digit. The empty string is valid.
+[[nodiscard]] bool config_prefix_ok(Str value);
+
 void config_free(Config *cfg);

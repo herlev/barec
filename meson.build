@@ -34,6 +34,7 @@ barec_lib = static_library(
     'src/frontend/parser.c',
     'src/frontend/schema.c',
     'src/util/diag.c',
+    'src/util/file.c',
     'src/util/strbuf.c',
   ],
   include_directories: src_inc,

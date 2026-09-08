@@ -2,6 +2,7 @@
 
 #include "backend/config.h"
 #include "util/macros.h"
+#include "util/types.h"
 
 #include <stdarg.h>
 #include <stdio.h>
@@ -103,15 +104,10 @@ static CStd parse_std(const char *value) {
 }
 
 static void validate_prefix(const char *prefix) {
-  for (size_t i = 0; prefix[i] != '\0'; i++) {
-    char c = prefix[i];
-    bool alpha = (bool)((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '_');
-    bool digit = (bool)(c >= '0' && c <= '9');
-    if (!alpha && !(digit && i > 0)) {
-      usage_error("invalid --prefix '%s', expected letters, digits, and underscores not starting "
-                  "with a digit",
-                  prefix);
-    }
+  if (!config_prefix_ok((Str){.data = prefix, .len = strlen(prefix)})) {
+    usage_error("invalid --prefix '%s', expected letters, digits, and underscores not starting "
+                "with a digit",
+                prefix);
   }
 }
 
