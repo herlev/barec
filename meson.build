@@ -159,6 +159,26 @@ static_library(
   include_directories: runtime_inc,
 )
 
+example_embedded_gen = custom_target(
+  'example-embedded-gen',
+  input: ['tests/example.bare', 'tests/snapshots/embedded.conf'],
+  output: ['example_embedded.h', 'example_embedded.c'],
+  command: [
+    barec,
+    'generate',
+    '@INPUT0@',
+    '-o', '@OUTDIR@',
+    '-n', 'example_embedded',
+    '-c', '@INPUT1@',
+  ],
+)
+
+static_library(
+  'example_embedded',
+  example_embedded_gen[1],
+  include_directories: runtime_inc,
+)
+
 protocol_gen = custom_target(
   'protocol-gen',
   input: 'examples/protocol.bare',

@@ -27,6 +27,7 @@ static void test_defaults(void) {
   assert(cfg.function_case == CaseStyle_SNAKE);
   assert(cfg.enum_variant_style == EnumVariantStyle_TYPE_UPPER);
   assert(cfg.prefix.len == 0);
+  assert(cfg.type_suffix.len == 0);
   assert(cfg.str_cap == 64);
   assert(cfg.data_cap == 64);
   assert(cfg.list_cap == 8);
@@ -48,6 +49,7 @@ static void test_full(void) {
                        "function_case = snake\n"
                        "enum_variant = UPPER\n"
                        "prefix = acme\n"
+                       "type_suffix = _t\n"
                        "\n"
                        "[caps]\n"
                        "str = 128\n"
@@ -60,6 +62,7 @@ static void test_full(void) {
   assert(cfg.field_case == CaseStyle_CAMEL);
   assert(cfg.enum_variant_style == EnumVariantStyle_UPPER);
   assert(str_eq(cfg.prefix, STR("acme")));
+  assert(str_eq(cfg.type_suffix, STR("_t")));
   assert(cfg.str_cap == 128);
   assert(cfg.list_cap == 16);
   assert(cfg.data_cap == 64);
@@ -103,8 +106,15 @@ static void test_errors(void) {
   diag = load_fail("[naming]\nenum_variant = Kebab\n");
   assert(strstr(diag.message, "invalid enum variant style") != nullptr);
 
+  Config cfg = load_ok("[naming]\nenum_variant = TYPE_UPPER\n");
+  assert(cfg.enum_variant_style == EnumVariantStyle_SCREAMING);
+  config_free(&cfg);
+
   diag = load_fail("[naming]\nprefix = 9lives\n");
   assert(strstr(diag.message, "invalid prefix") != nullptr);
+
+  diag = load_fail("[naming]\ntype_suffix = -t\n");
+  assert(strstr(diag.message, "invalid type suffix") != nullptr);
 
   diag = load_fail("[caps]\nstr = 0\n");
   assert(strstr(diag.message, "at least one") != nullptr);

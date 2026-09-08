@@ -126,8 +126,7 @@ static void union_member_bases(const Type *t, VEC(GenName) * out) {
 }
 
 static char *render_path_type_name(const Gen *g, const StrBuf *path) {
-  return codegen_render_ident(g->cfg, (Str){.data = path->data, .len = path->len},
-                              g->cfg->type_case, true);
+  return codegen_render_type_name(g->cfg, (Str){.data = path->data, .len = path->len});
 }
 
 void codegen_scan_type(Gen *g, const Type *t, StrBuf *path) {

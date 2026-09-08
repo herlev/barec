@@ -61,7 +61,7 @@ void codegen_emit_member(Gen *g, const Type *t, const char *name, const char *di
     }
     break;
   case TypeKind_USER: {
-    char *ref = codegen_render_ident(g->cfg, t->user.name, g->cfg->type_case, true);
+    char *ref = codegen_render_type_name(g->cfg, t->user.name);
     codegen_indent(out, indent);
     strbuf_appendf(out, "%s %s%s;\n", ref, name, dims);
     free(ref);
@@ -139,9 +139,11 @@ static const char *smallest_uint(u64 max) {
 
 char *codegen_render_variant(const Gen *g, const char *type_cname, Str raw) {
   StrBuf out = {};
+  Str base = {.data = type_cname, .len = codegen_type_base_len(g->cfg, type_cname)};
   switch (g->cfg->enum_variant_style) {
   case EnumVariantStyle_TYPE_UPPER:
-    strbuf_appendf(&out, "%s_", type_cname);
+    strbuf_append_str(&out, base);
+    strbuf_append_char(&out, '_');
     name_render(raw, CaseStyle_SCREAMING, &out);
     break;
   case EnumVariantStyle_UPPER: {
@@ -156,8 +158,14 @@ char *codegen_render_variant(const Gen *g, const char *type_cname, Str raw) {
     break;
   }
   case EnumVariantStyle_TYPE_PASCAL:
-    strbuf_appendf(&out, "%s_", type_cname);
+    strbuf_append_str(&out, base);
+    strbuf_append_char(&out, '_');
     name_render(raw, CaseStyle_PASCAL, &out);
+    break;
+  case EnumVariantStyle_SCREAMING:
+    name_render(base, CaseStyle_SCREAMING, &out);
+    strbuf_append_char(&out, '_');
+    name_render(raw, CaseStyle_SCREAMING, &out);
     break;
   }
   return out.data;
@@ -310,7 +318,7 @@ void codegen_emit_root_def(Gen *g, const UserType *ut, const char *cname) {
   const Type *t = ut->type;
   switch (t->kind) {
   case TypeKind_USER: {
-    char *ref = codegen_render_ident(g->cfg, t->user.name, g->cfg->type_case, true);
+    char *ref = codegen_render_type_name(g->cfg, t->user.name);
     strbuf_appendf(out, "typedef %s %s;\n\n", ref, cname);
     free(ref);
     break;

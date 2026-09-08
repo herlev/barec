@@ -68,6 +68,14 @@ char *codegen_render_ident(const Config *cfg, Str raw, CaseStyle style, bool wit
 char *codegen_render_ident_cstr(const Config *cfg, const char *raw, CaseStyle style,
                                 bool with_prefix);
 
+/// C name for a user or derived type: prefix, type_case, then the
+/// configured type suffix. Returns an owned string.
+char *codegen_render_type_name(const Config *cfg, Str raw);
+
+/// Length of cname without the configured type suffix. Function and enum
+/// variant names derive from this base so the suffix stays on types only.
+size_t codegen_type_base_len(const Config *cfg, const char *cname);
+
 /// Function name for a generated type, derived from its C name so prefix
 /// and casing carry over, e.g. ("AcmeCustomer", "read") -> acme_customer_read.
 char *codegen_type_fn_name(const Gen *g, const char *cname, const char *op);

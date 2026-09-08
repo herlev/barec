@@ -75,9 +75,12 @@ static bool is_ident_char(char c) {
     *out = EnumVariantStyle_UPPER;
   } else if (str_eq(value, STR("Type_Pascal"))) {
     *out = EnumVariantStyle_TYPE_PASCAL;
+  } else if (str_eq(value, STR("TYPE_UPPER"))) {
+    *out = EnumVariantStyle_SCREAMING;
   } else {
     diag_set(ld->diag, loc_of(ld, value.data),
-             "invalid enum variant style '%.*s', expected Type_UPPER, UPPER, or Type_Pascal",
+             "invalid enum variant style '%.*s', expected Type_UPPER, UPPER, Type_Pascal, "
+             "or TYPE_UPPER",
              (int)value.len, value.data);
     return false;
   }
@@ -97,6 +100,19 @@ static bool is_ident_char(char c) {
     }
   }
   ld->cfg.prefix = value;
+  return true;
+}
+
+[[nodiscard]] static bool parse_type_suffix(Loader *ld, Str value) {
+  for (size_t i = 0; i < value.len; i++) {
+    if (!is_ident_char(value.data[i])) {
+      diag_set(ld->diag, loc_of(ld, value.data),
+               "invalid type suffix '%.*s', expected letters, digits, and underscores",
+               (int)value.len, value.data);
+      return false;
+    }
+  }
+  ld->cfg.type_suffix = value;
   return true;
 }
 
@@ -165,6 +181,9 @@ static bool is_ident_char(char c) {
   }
   if (str_eq(key, STR("prefix"))) {
     return parse_prefix(ld, value);
+  }
+  if (str_eq(key, STR("type_suffix"))) {
+    return parse_type_suffix(ld, value);
   }
   diag_set(ld->diag, loc_of(ld, key.data), "unknown key '%.*s' in [naming]", (int)key.len,
            key.data);

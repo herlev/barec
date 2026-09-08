@@ -190,7 +190,7 @@ bool codegen_generate(const Schema *schema, const Config *cfg, const char *basen
   }
   for (size_t i = 0; i < schema->len; i++) {
     if (type_underlying(schema->types[i].type)->kind != TypeKind_VOID) {
-      root_names[i] = codegen_render_ident(cfg, schema->types[i].name, cfg->type_case, true);
+      root_names[i] = codegen_render_type_name(cfg, schema->types[i].name);
     }
   }
 

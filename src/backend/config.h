@@ -16,6 +16,7 @@ typedef enum : u8 {
   EnumVariantStyle_TYPE_UPPER,
   EnumVariantStyle_UPPER,
   EnumVariantStyle_TYPE_PASCAL,
+  EnumVariantStyle_SCREAMING,
 } EnumVariantStyle;
 
 typedef enum : u8 {
@@ -31,8 +32,8 @@ typedef struct {
   u32 cap;
 } CapOverride;
 
-/// prefix and override paths view source_text when loaded from a config
-/// file. source_text is owned and released by config_free.
+/// prefix, type_suffix, and override paths view source_text when loaded
+/// from a config file. source_text is owned and released by config_free.
 typedef struct {
   CaseStyle type_case;
   CaseStyle field_case;
@@ -40,6 +41,7 @@ typedef struct {
   EnumVariantStyle enum_variant_style;
   CStd std;
   Str prefix;
+  Str type_suffix;
   u32 str_cap;
   u32 data_cap;
   u32 list_cap;

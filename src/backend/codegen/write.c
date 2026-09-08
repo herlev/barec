@@ -119,7 +119,7 @@ static void emit_write_step(Gen *g, const Type *t, const char *expr, int indent,
     }
     break;
   case TypeKind_USER: {
-    char *cname = codegen_render_ident(g->cfg, t->user.name, g->cfg->type_case, true);
+    char *cname = codegen_render_type_name(g->cfg, t->user.name);
     emit_write_call(g, cname, expr, indent);
     free(cname);
     break;
@@ -214,7 +214,7 @@ static void emit_write_body(Gen *g, const Type *t) {
   StrBuf *out = g->out;
   switch (t->kind) {
   case TypeKind_USER: {
-    char *target = codegen_render_ident(g->cfg, t->user.name, g->cfg->type_case, true);
+    char *target = codegen_render_type_name(g->cfg, t->user.name);
     char *fn = codegen_type_fn_name(g, target, "write");
     strbuf_appendf(out, "  return %s(w, value);\n", fn);
     free(fn);

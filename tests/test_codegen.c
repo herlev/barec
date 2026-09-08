@@ -170,6 +170,37 @@ static void test_union_primitive_members(void) {
   free_generated(&gen);
 }
 
+static void test_screaming_enum_variants(void) {
+  Config cfg = config_default();
+  cfg.prefix = STR("acme");
+  cfg.enum_variant_style = EnumVariantStyle_SCREAMING;
+  Generated gen = generate_ok("type Department enum { ACCOUNTING JSMITH = 99 }\n"
+                              "type Person union { Department | str }",
+                              &cfg);
+  assert(strstr(gen.header.data, "ACME_DEPARTMENT_ACCOUNTING = 0,") != nullptr);
+  assert(strstr(gen.header.data, "ACME_DEPARTMENT_JSMITH = 99,") != nullptr);
+  assert(strstr(gen.header.data, "ACME_PERSON_TAG_DEPARTMENT = 0,") != nullptr);
+  assert(strstr(gen.header.data, "ACME_PERSON_TAG_STR = 1,") != nullptr);
+  free_generated(&gen);
+}
+
+static void test_type_suffix(void) {
+  Config cfg = config_default();
+  cfg.type_case = CaseStyle_SNAKE;
+  cfg.type_suffix = STR("_t");
+  Generated gen = generate_ok("type Level enum { LOW HIGH }\n"
+                              "type Customer struct { level: Level name: str }",
+                              &cfg);
+  assert(strstr(gen.header.data, "} level_t;") != nullptr);
+  assert(strstr(gen.header.data, "} customer_t;") != nullptr);
+  assert(strstr(gen.header.data, "level_LOW = 0,") != nullptr);
+  assert(strstr(gen.header.data, "level_t level;") != nullptr);
+  assert(strstr(gen.header.data, "level_read(BareReader *r, level_t *out);") != nullptr);
+  assert(strstr(gen.header.data, "customer_decode(customer_t *out") != nullptr);
+  assert(strstr(gen.header.data, "customer_t_") == nullptr);
+  free_generated(&gen);
+}
+
 static void test_name_collision(void) {
   Config cfg = config_default();
   Diag diag = generate_fail("type FooBar u8\n"
@@ -188,6 +219,8 @@ int main(void) {
   test_prefix_and_styles();
   test_keyword_escape();
   test_union_primitive_members();
+  test_screaming_enum_variants();
+  test_type_suffix();
   test_name_collision();
   return 0;
 }

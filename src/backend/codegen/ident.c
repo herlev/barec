@@ -7,6 +7,7 @@
 #include "util/types.h"
 
 #include <stddef.h>
+#include <stdlib.h>
 #include <string.h>
 
 static bool is_c_keyword(const char *s) {
@@ -55,9 +56,30 @@ char *codegen_render_ident_cstr(const Config *cfg, const char *raw, CaseStyle st
   return codegen_render_ident(cfg, (Str){.data = raw, .len = strlen(raw)}, style, with_prefix);
 }
 
+char *codegen_render_type_name(const Config *cfg, Str raw) {
+  char *name = codegen_render_ident(cfg, raw, cfg->type_case, true);
+  if (cfg->type_suffix.len == 0) {
+    return name;
+  }
+  StrBuf out = {};
+  strbuf_append(&out, name);
+  strbuf_append_str(&out, cfg->type_suffix);
+  free(name);
+  return out.data;
+}
+
+size_t codegen_type_base_len(const Config *cfg, const char *cname) {
+  size_t n = strlen(cname);
+  size_t s = cfg->type_suffix.len;
+  if (s > 0 && n > s && strncmp(cname + n - s, cfg->type_suffix.data, s) == 0) {
+    return n - s;
+  }
+  return n;
+}
+
 char *codegen_type_fn_name(const Gen *g, const char *cname, const char *op) {
   StrBuf raw = {};
-  strbuf_append(&raw, cname);
+  strbuf_append_str(&raw, (Str){.data = cname, .len = codegen_type_base_len(g->cfg, cname)});
   strbuf_append_char(&raw, '_');
   strbuf_append(&raw, op);
   char *name = codegen_render_ident(g->cfg, (Str){.data = raw.data, .len = raw.len},
