@@ -139,6 +139,26 @@ static_library(
   override_options: ['c_std=c99'],
 )
 
+example_camel_gen = custom_target(
+  'example-camel-gen',
+  input: ['tests/example.bare', 'tests/snapshots/camel.conf'],
+  output: ['example_camel.h', 'example_camel.c'],
+  command: [
+    barec,
+    'generate',
+    '@INPUT0@',
+    '-o', '@OUTDIR@',
+    '-n', 'example_camel',
+    '-c', '@INPUT1@',
+  ],
+)
+
+static_library(
+  'example_camel',
+  example_camel_gen[1],
+  include_directories: runtime_inc,
+)
+
 protocol_gen = custom_target(
   'protocol-gen',
   input: 'examples/protocol.bare',

@@ -52,6 +52,13 @@ cp "$TMP/barec.conf" "$TMP/proj/"
 grep -q "using config" "$TMP/note"
 cmp "$TMP/msg.h" "$TMP/proj/msg.h"
 
+printf '[naming]\nprefix = auto\n' > "$TMP/proj/barec.conf"
+"$BAREC" generate "$TMP/proj/msg.bare" 2> /dev/null
+grep -q "AutoPoint" "$TMP/proj/msg.h"
+"$BAREC" generate "$TMP/proj/msg.bare" --prefix=flag 2> /dev/null
+grep -q "FlagPoint" "$TMP/proj/msg.h"
+if grep -q "AutoPoint" "$TMP/proj/msg.h"; then exit 1; fi
+
 "$BAREC" generate "$TMP/msg.bare" -o "$TMP/pfx" --prefix=acme
 grep -q "AcmePoint" "$TMP/pfx/msg.h"
 grep -q "acme_point_decode" "$TMP/pfx/msg.h"

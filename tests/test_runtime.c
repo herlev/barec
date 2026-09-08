@@ -246,7 +246,10 @@ static void test_short_write(void) {
   assert(w.len == 0);
   assert(bare_write_uint(&w, UINT64_MAX) == BareStatus_SHORT_WRITE);
   assert(w.len == 0);
-  assert(bare_write_str(&w, "BARE", 4) == BareStatus_OK || true);
+  w = bare_writer_new(buf, sizeof(buf));
+  assert(bare_write_str(&w, "BARE", 4) == BareStatus_SHORT_WRITE);
+  w = bare_writer_new(buf, sizeof(buf));
+  assert(bare_write_data(&w, (const uint8_t *)"BARE", 4) == BareStatus_SHORT_WRITE);
 }
 
 static void test_str_helpers(void) {

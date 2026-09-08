@@ -6,6 +6,10 @@ type Mode enum {
   TURBO = 300
 }
 type Blob data[4]
+type Counts list<uint>[10]
+type MaybeU8 optional<u8>
+type Row list<u8>
+type Dict map<u8><u8>
 type Huge enum {
   TINY
   BIG = 18446744073709551615
@@ -29,4 +33,7 @@ type Packet struct {
   by_id: map<Alias><bool>
   fixed_blobs: list<data[8]>[2]
   maybe: optional<Alias>
+  seq: uint
+  delta: int
+  by_key: map<data[4]><u8>
 }
