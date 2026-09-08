@@ -61,8 +61,7 @@ static void emit_function_decls(Gen *g, const char *cname) {
   for (size_t i = 0; i < all.len && ok; i++) {
     for (size_t j = 0; j < i && ok; j++) {
       if (strcmp(all.ptr[i], all.ptr[j]) == 0) {
-        diag_set(g->diag, (SrcLoc){}, "generated type name '%s' is used more than once",
-                 all.ptr[i]);
+        diag_set_global(g->diag, "generated type name '%s' is used more than once", all.ptr[i]);
         ok = false;
       }
     }
@@ -70,8 +69,8 @@ static void emit_function_decls(Gen *g, const char *cname) {
       StrBuf line = {};
       strbuf_appendf(&line, "\n%s\n", all.ptr[i]);
       if (strstr(shared.data, line.data) != nullptr) {
-        diag_set(g->diag, (SrcLoc){}, "generated type name '%s' collides with a shared typedef",
-                 all.ptr[i]);
+        diag_set_global(g->diag, "generated type name '%s' collides with a shared typedef",
+                        all.ptr[i]);
         ok = false;
       }
       strbuf_free(&line);
@@ -115,8 +114,8 @@ static void emit_header_content(Gen *g, char *const root_names[], const char *ba
 [[nodiscard]] static bool check_overrides_used(const Gen *g) {
   for (size_t i = 0; i < g->cfg->overrides_len; i++) {
     if (!g->override_used[i]) {
-      diag_set(g->diag, (SrcLoc){}, "cap override '%.*s' does not match any schema element",
-               (int)g->cfg->overrides[i].path.len, g->cfg->overrides[i].path.data);
+      diag_set_global(g->diag, "cap override '%.*s' does not match any schema element",
+                      (int)g->cfg->overrides[i].path.len, g->cfg->overrides[i].path.data);
       return false;
     }
   }

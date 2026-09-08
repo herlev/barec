@@ -226,8 +226,8 @@ static void test_errors(void) {
 static void test_error_location(void) {
   Diag diag = parse_fail("type Foo struct {\n  x u8\n}");
   assert(strstr(diag.message, "expected ':'") != nullptr);
-  assert(diag.loc.line == 2);
-  assert(diag.loc.column == 5);
+  assert(diag.loc.value.line == 2);
+  assert(diag.loc.value.column == 5);
 }
 
 static void test_deep_nesting(void) {

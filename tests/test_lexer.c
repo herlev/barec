@@ -102,10 +102,10 @@ static void test_no_space_separation(void) {
 
 static void test_integer_ident_boundary(void) {
   Diag diag = lex_fail("1abc");
-  assert(diag.loc.line == 1 && diag.loc.column == 2);
+  assert(diag.loc.value.line == 1 && diag.loc.value.column == 2);
 
   diag = lex_fail("enum {FOO=1BAR}");
-  assert(diag.loc.line == 1 && diag.loc.column == 12);
+  assert(diag.loc.value.line == 1 && diag.loc.value.column == 12);
 }
 
 static void test_locations(void) {
@@ -122,16 +122,16 @@ static void test_locations(void) {
 
 static void test_errors(void) {
   Diag diag = lex_fail("$");
-  assert(diag.loc.line == 1 && diag.loc.column == 1);
+  assert(diag.loc.value.line == 1 && diag.loc.value.column == 1);
 
   diag = lex_fail("type Foo\n u8 @");
-  assert(diag.loc.line == 2 && diag.loc.column == 5);
+  assert(diag.loc.value.line == 2 && diag.loc.value.column == 5);
 
   diag = lex_fail("18446744073709551616");
-  assert(diag.loc.line == 1 && diag.loc.column == 1);
+  assert(diag.loc.value.line == 1 && diag.loc.value.column == 1);
 
   diag = lex_fail("a\r\nb");
-  assert(diag.loc.line == 1 && diag.loc.column == 2);
+  assert(diag.loc.value.line == 1 && diag.loc.value.column == 2);
 }
 
 static const char EXAMPLE_SCHEMA[] = {

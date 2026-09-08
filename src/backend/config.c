@@ -3,6 +3,7 @@
 #include "util/ascii.h"
 #include "util/diag.h"
 #include "util/file.h"
+#include "util/macros.h"
 #include "util/types.h"
 #include "util/vec.h"
 
@@ -292,7 +293,7 @@ bool config_prefix_ok(Str value) {
   case Section_CAP_OVERRIDES:
     return load_override_key(ld, key, value);
   }
-  return false;
+  UNREACHABLE();
 }
 
 bool config_load_text(Config *cfg, const char *text, size_t len, Diag *diag) {
@@ -336,7 +337,7 @@ bool config_load(Config *cfg, const char *path, Diag *diag) {
   size_t len = 0;
   char *text = file_read(path, &len);
   if (text == nullptr) {
-    diag_set(diag, (SrcLoc){}, "cannot open config file '%s': %s", path, strerror(errno));
+    diag_set_global(diag, "cannot open config file '%s': %s", path, strerror(errno));
     return false;
   }
   bool ok = config_load_text(cfg, text, len, diag);

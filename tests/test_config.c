@@ -91,14 +91,14 @@ static void test_section_switching(void) {
 static void test_errors(void) {
   Diag diag = load_fail("[bogus]\n");
   assert(strstr(diag.message, "unknown section") != nullptr);
-  assert(diag.loc.line == 1);
+  assert(diag.loc.value.line == 1);
 
   diag = load_fail("str = 64\n");
   assert(strstr(diag.message, "outside of a section") != nullptr);
 
   diag = load_fail("[naming]\nbogus = 1\n");
   assert(strstr(diag.message, "unknown key 'bogus'") != nullptr);
-  assert(diag.loc.line == 2);
+  assert(diag.loc.value.line == 2);
 
   diag = load_fail("[naming]\ntype_case = kebab\n");
   assert(strstr(diag.message, "invalid case style 'kebab'") != nullptr);
@@ -130,7 +130,7 @@ static void test_errors(void) {
 
   diag = load_fail("[caps.overrides]\nCustomer.orders = 1\nCustomer.orders = 2\n");
   assert(strstr(diag.message, "duplicate override") != nullptr);
-  assert(diag.loc.line == 3);
+  assert(diag.loc.value.line == 3);
 
   diag = load_fail("[caps.overrides]\nbad path = 1\n");
   assert(strstr(diag.message, "invalid override path") != nullptr);
@@ -140,15 +140,15 @@ static void test_load_file(void) {
   const char *path = "test_config_tmp.conf";
   FILE *f = fopen(path, "w");
   assert(f != nullptr);
-  (void)fputs("[caps]\nstr = 99\n", f);
-  (void)fclose(f);
+  fputs("[caps]\nstr = 99\n", f);
+  fclose(f);
 
   Config cfg = config_default();
   Diag diag = {};
   assert(config_load(&cfg, path, &diag));
   assert(cfg.str_cap == 99);
   config_free(&cfg);
-  (void)remove(path);
+  remove(path);
 
   assert(!config_load(&cfg, "does_not_exist.conf", &diag));
   assert(strstr(diag.message, "cannot open") != nullptr);

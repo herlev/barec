@@ -107,21 +107,22 @@ const VEC(GenName) * codegen_bases_of(const Gen *g, const Type *t);
 /// Emits one struct member declaration for a type, recursing through
 /// anonymous aggregates. dims accumulates array suffixes from enclosing
 /// fixed-length lists.
-void codegen_emit_member(Gen *g, const Type *t, const char *name, const char *dims, int indent);
+void codegen_emit_member(const Gen *g, const Type *t, const char *name, const char *dims,
+                         int indent);
 
 /// Emits named definitions for anonymous aggregates in post-order so inner
 /// types precede their users. The root definition itself is skipped.
-void codegen_emit_derived_defs(Gen *g, const Type *t, bool is_root);
+void codegen_emit_derived_defs(const Gen *g, const Type *t, bool is_root);
 
-void codegen_emit_root_def(Gen *g, const UserType *ut, const char *cname);
-void codegen_emit_shared_typedefs(Gen *g);
+void codegen_emit_root_def(const Gen *g, const UserType *ut, const char *cname);
+void codegen_emit_shared_typedefs(const Gen *g);
 void codegen_indent(StrBuf *out, int indent);
 
 /// Emit a complete read/write function definition for a named type. Derived
 /// helper functions are static, root functions match the header decls.
-void codegen_emit_read_fn(Gen *g, const Type *t, const char *cname, bool is_public);
-void codegen_emit_write_fn(Gen *g, const Type *t, const char *cname, bool is_public);
+void codegen_emit_read_fn(const Gen *g, const Type *t, const char *cname, bool is_public);
+void codegen_emit_write_fn(const Gen *g, const Type *t, const char *cname, bool is_public);
 
 /// Emits the whole generated source file into g->out: derived helpers in
 /// post-order, then read/write/decode/encode per user type.
-void codegen_emit_source_content(Gen *g, char *const root_names[], const char *basename);
+void codegen_emit_source_content(const Gen *g, char *const root_names[], const char *basename);

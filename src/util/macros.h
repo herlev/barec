@@ -9,6 +9,6 @@
 /// with undefined behavior when actually reached.
 #define UNREACHABLE()                                                                              \
   do {                                                                                             \
-    (void)fprintf(stderr, "%s:%d: unreachable\n", __FILE__, __LINE__);                             \
+    fprintf(stderr, "%s:%d: unreachable\n", __FILE__, __LINE__);                                   \
     abort();                                                                                       \
   } while (0)

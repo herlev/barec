@@ -31,7 +31,7 @@ char *file_read(const char *path, size_t *out_len) {
     }
   }
   int read_errno = errno;
-  (void)fclose(file);
+  fclose(file);
   if (!ok) {
     free(text);
     errno = read_errno;

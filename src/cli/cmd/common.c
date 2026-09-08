@@ -14,11 +14,11 @@
 #include <string.h>
 
 void cmd_print_diag(const char *path, const Diag *diag) {
-  if (diag->loc.line > 0) {
-    (void)fprintf(stderr, "%s:%u:%u: error: %s\n", path, diag->loc.line, diag->loc.column,
-                  diag->message);
+  if (diag->loc.has_value) {
+    fprintf(stderr, "%s:%u:%u: error: %s\n", path, diag->loc.value.line, diag->loc.value.column,
+            diag->message);
   } else {
-    (void)fprintf(stderr, "%s: error: %s\n", cli_prog_name(), diag->message);
+    fprintf(stderr, "%s: error: %s\n", cli_prog_name(), diag->message);
   }
 }
 
@@ -26,8 +26,7 @@ bool cmd_load_schema(const char *path, char **text_out, Schema *schema) {
   size_t len = 0;
   char *text = file_read(path, &len);
   if (text == nullptr) {
-    (void)fprintf(stderr, "%s: error: cannot open '%s': %s\n", cli_prog_name(), path,
-                  strerror(errno));
+    fprintf(stderr, "%s: error: cannot open '%s': %s\n", cli_prog_name(), path, strerror(errno));
     return false;
   }
   Diag diag = {};

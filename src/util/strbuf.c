@@ -48,7 +48,7 @@ void strbuf_appendf(StrBuf *sb, const char *fmt, ...) {
     abort();
   }
   reserve(sb, (size_t)n);
-  (void)vsnprintf(sb->data + sb->len, (size_t)n + 1, fmt, args);
+  vsnprintf(sb->data + sb->len, (size_t)n + 1, fmt, args);
   va_end(args);
   sb->len += (size_t)n;
 }

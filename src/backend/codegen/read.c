@@ -11,16 +11,16 @@
 #include <stdlib.h>
 #include <string.h>
 
-static void emit_read_step(Gen *g, const Type *t, const char *expr, int indent, int depth);
+static void emit_read_step(const Gen *g, const Type *t, const char *expr, int indent, int depth);
 
-static void emit_read_call(Gen *g, const char *cname, const char *expr, int indent) {
+static void emit_read_call(const Gen *g, const char *cname, const char *expr, int indent) {
   char *fn = codegen_type_fn_name(g, cname, "read");
   codegen_indent(g->out, indent);
   strbuf_appendf(g->out, "BARE_TRY(%s(r, &%s));\n", fn, expr);
   free(fn);
 }
 
-static void emit_read_optional(Gen *g, const Type *inner, const char *has_expr,
+static void emit_read_optional(const Gen *g, const Type *inner, const char *has_expr,
                                const char *value_expr, int indent, int depth) {
   StrBuf *out = g->out;
   codegen_indent(out, indent);
@@ -46,8 +46,8 @@ static void emit_read_optional(Gen *g, const Type *inner, const char *has_expr,
   strbuf_append(out, "}\n");
 }
 
-static void emit_read_list_fixed(Gen *g, const Type *elem, const char *arr_expr, u64 n, int indent,
-                                 int depth) {
+static void emit_read_list_fixed(const Gen *g, const Type *elem, const char *arr_expr, u64 n,
+                                 int indent, int depth) {
   StrBuf *out = g->out;
   codegen_indent(out, indent);
   strbuf_appendf(out, "for (uint64_t i%d = 0; i%d < %" PRIu64 "; i%d++) {\n", depth, depth, n,
@@ -60,7 +60,7 @@ static void emit_read_list_fixed(Gen *g, const Type *elem, const char *arr_expr,
   strbuf_append(out, "}\n");
 }
 
-static void emit_read_list_var(Gen *g, const Type *elem, const char *items_expr,
+static void emit_read_list_var(const Gen *g, const Type *elem, const char *items_expr,
                                const char *len_expr, u32 cap, int indent, int depth) {
   StrBuf *out = g->out;
   codegen_indent(out, indent);
@@ -113,8 +113,9 @@ static void emit_key_equal(const Gen *g, const Type *key, const char *a, const c
   }
 }
 
-static void emit_read_map(Gen *g, const Type *key, const Type *value, const char *entries_expr,
-                          const char *len_expr, u32 cap, int indent, int depth) {
+static void emit_read_map(const Gen *g, const Type *key, const Type *value,
+                          const char *entries_expr, const char *len_expr, u32 cap, int indent,
+                          int depth) {
   StrBuf *out = g->out;
   codegen_indent(out, indent);
   strbuf_append(out, "{\n");
@@ -162,7 +163,7 @@ static void emit_read_map(Gen *g, const Type *key, const Type *value, const char
   strbuf_append(out, "}\n");
 }
 
-static void emit_read_step(Gen *g, const Type *t, const char *expr, int indent, int depth) {
+static void emit_read_step(const Gen *g, const Type *t, const char *expr, int indent, int depth) {
   StrBuf *out = g->out;
   switch (t->kind) {
   case TypeKind_STR:
@@ -245,7 +246,7 @@ static void emit_read_step(Gen *g, const Type *t, const char *expr, int indent, 
   }
 }
 
-static void emit_read_enum_body(Gen *g, const Type *t, const char *cname) {
+static void emit_read_enum_body(const Gen *g, const Type *t, const char *cname) {
   StrBuf *out = g->out;
   strbuf_append(out, "  uint64_t raw;\n  BARE_TRY(bare_read_uint(r, &raw));\n  switch (raw) {\n");
   for (size_t i = 0; i < t->enum_values.len; i++) {
@@ -255,7 +256,7 @@ static void emit_read_enum_body(Gen *g, const Type *t, const char *cname) {
   strbuf_appendf(out, "  *out = (%s)raw;\n  return BareStatus_OK;\n", cname);
 }
 
-static void emit_read_union_body(Gen *g, const Type *t) {
+static void emit_read_union_body(const Gen *g, const Type *t) {
   StrBuf *out = g->out;
   const char *tag_cname = codegen_tag_name_of(g, t);
   const VEC(GenName) *bases = codegen_bases_of(g, t);
@@ -281,7 +282,7 @@ static void emit_read_union_body(Gen *g, const Type *t) {
                      "  return BareStatus_OK;\n");
 }
 
-static void emit_read_body(Gen *g, const Type *t, const char *cname) {
+static void emit_read_body(const Gen *g, const Type *t, const char *cname) {
   StrBuf *out = g->out;
   switch (t->kind) {
   case TypeKind_USER: {
@@ -368,7 +369,7 @@ static void emit_read_body(Gen *g, const Type *t, const char *cname) {
   }
 }
 
-void codegen_emit_read_fn(Gen *g, const Type *t, const char *cname, bool is_public) {
+void codegen_emit_read_fn(const Gen *g, const Type *t, const char *cname, bool is_public) {
   char *fn = codegen_type_fn_name(g, cname, "read");
   const char *linkage = "static ";
   if (is_public) {

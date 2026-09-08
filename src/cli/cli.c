@@ -12,34 +12,33 @@
 static const char *prog_name = "barec";
 
 static void print_help(FILE *stream) {
-  (void)fprintf(stream, "%s - BARE schema compiler for C\n\n", prog_name);
-  (void)fprintf(stream,
-                "Usage:\n"
-                "  %s generate <schema.bare> [options]\n"
-                "  %s check <schema.bare>\n"
-                "  %s config\n\n",
-                prog_name, prog_name, prog_name);
-  (void)fputs(
-      "Commands:\n"
-      "  generate  Generate C types and (de)serialization code from a schema\n"
-      "  check     Parse and validate a schema, printing nothing on success\n"
-      "  config    Print an annotated default config file to stdout\n"
-      "\n"
-      "Options:\n"
-      "  -o, --out-dir <dir>   Directory for generated files  [default: schema's directory]\n"
-      "  -n, --name <name>     Basename of the generated .h/.c pair  [default: schema stem]\n"
-      "  -c, --config <file>   Config file  [default: barec.conf next to the schema, if "
-      "present]\n"
-      "      --std <c99|c23>   C standard of the generated code  [default: c23]\n"
-      "      --prefix <name>   Prefix for all generated identifiers\n"
-      "      --runtime         Also write the runtime (bare.h, bare.c) into the output "
-      "directory\n"
-      "  -h, --help            Print this help\n"
-      "  -V, --version         Print version\n"
-      "\n"
-      "Settings apply in order: defaults, config file, flags.\n",
-      stream);
-  (void)fprintf(stream, "A schema path alone implies generate: %s device.bare\n", prog_name);
+  fprintf(stream, "%s - BARE schema compiler for C\n\n", prog_name);
+  fprintf(stream,
+          "Usage:\n"
+          "  %s generate <schema.bare> [options]\n"
+          "  %s check <schema.bare>\n"
+          "  %s config\n\n",
+          prog_name, prog_name, prog_name);
+  fputs("Commands:\n"
+        "  generate  Generate C types and (de)serialization code from a schema\n"
+        "  check     Parse and validate a schema, printing nothing on success\n"
+        "  config    Print an annotated default config file to stdout\n"
+        "\n"
+        "Options:\n"
+        "  -o, --out-dir <dir>   Directory for generated files  [default: schema's directory]\n"
+        "  -n, --name <name>     Basename of the generated .h/.c pair  [default: schema stem]\n"
+        "  -c, --config <file>   Config file  [default: barec.conf next to the schema, if "
+        "present]\n"
+        "      --std <c99|c23>   C standard of the generated code  [default: c23]\n"
+        "      --prefix <name>   Prefix for all generated identifiers\n"
+        "      --runtime         Also write the runtime (bare.h, bare.c) into the output "
+        "directory\n"
+        "  -h, --help            Print this help\n"
+        "  -V, --version         Print version\n"
+        "\n"
+        "Settings apply in order: defaults, config file, flags.\n",
+        stream);
+  fprintf(stream, "A schema path alone implies generate: %s device.bare\n", prog_name);
 }
 
 const char *cli_prog_name(void) { return prog_name; }
@@ -53,12 +52,12 @@ static void set_prog_name(int argc, char **argv) {
 }
 
 [[noreturn]] [[gnu::format(printf, 1, 2)]] static void usage_error(const char *fmt, ...) {
-  (void)fprintf(stderr, "%s: ", prog_name);
+  fprintf(stderr, "%s: ", prog_name);
   va_list args;
   va_start(args, fmt);
-  (void)vfprintf(stderr, fmt, args);
+  vfprintf(stderr, fmt, args);
   va_end(args);
-  (void)fprintf(stderr, "\ntry '%s --help'\n", prog_name);
+  fprintf(stderr, "\ntry '%s --help'\n", prog_name);
   exit(2);
 }
 

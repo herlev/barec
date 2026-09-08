@@ -32,9 +32,9 @@ static const char *const PRIMITIVE_CTYPE[] = {
 U64Lit codegen_u64_lit(u64 value) {
   U64Lit lit;
   if (value > INT64_MAX) {
-    (void)snprintf(lit.text, sizeof(lit.text), "UINT64_C(%" PRIu64 ")", value);
+    snprintf(lit.text, sizeof(lit.text), "UINT64_C(%" PRIu64 ")", value);
   } else {
-    (void)snprintf(lit.text, sizeof(lit.text), "%" PRIu64, value);
+    snprintf(lit.text, sizeof(lit.text), "%" PRIu64, value);
   }
   return lit;
 }
@@ -45,7 +45,8 @@ void codegen_indent(StrBuf *out, int indent) {
   }
 }
 
-void codegen_emit_member(Gen *g, const Type *t, const char *name, const char *dims, int indent) {
+void codegen_emit_member(const Gen *g, const Type *t, const char *name, const char *dims,
+                         int indent) {
   StrBuf *out = g->out;
   switch (t->kind) {
   case TypeKind_STR:
@@ -182,7 +183,7 @@ char *codegen_render_variant(const Gen *g, const char *type_cname, Str raw) {
   return out.data;
 }
 
-static void emit_enum_def(Gen *g, const char *cname, const EnumEntry entries[], size_t n) {
+static void emit_enum_def(const Gen *g, const char *cname, const EnumEntry entries[], size_t n) {
   StrBuf *out = g->out;
   u64 max = 0;
   for (size_t i = 0; i < n; i++) {
@@ -219,7 +220,7 @@ static void emit_enum_def(Gen *g, const char *cname, const EnumEntry entries[], 
   }
 }
 
-static void emit_schema_enum_def(Gen *g, const Type *t) {
+static void emit_schema_enum_def(const Gen *g, const Type *t) {
   size_t n = t->enum_values.len;
   assert(n > 0);
   EnumEntry *entries = malloc(n * sizeof(EnumEntry));
@@ -234,7 +235,7 @@ static void emit_schema_enum_def(Gen *g, const Type *t) {
   free(entries);
 }
 
-static void emit_struct_def(Gen *g, const Type *t, const char *cname) {
+static void emit_struct_def(const Gen *g, const Type *t, const char *cname) {
   StrBuf *out = g->out;
   strbuf_append(out, "typedef struct {\n");
   for (size_t i = 0; i < t->struct_fields.len; i++) {
@@ -246,7 +247,7 @@ static void emit_struct_def(Gen *g, const Type *t, const char *cname) {
   strbuf_appendf(out, "} %s;\n\n", cname);
 }
 
-static void emit_union_def(Gen *g, const Type *t) {
+static void emit_union_def(const Gen *g, const Type *t) {
   StrBuf *out = g->out;
   size_t n = t->union_members.len;
   assert(n > 0);
@@ -286,7 +287,7 @@ static void emit_union_def(Gen *g, const Type *t) {
   strbuf_appendf(out, "} %s;\n\n", codegen_name_of(g, t));
 }
 
-void codegen_emit_derived_defs(Gen *g, const Type *t, bool is_root) {
+void codegen_emit_derived_defs(const Gen *g, const Type *t, bool is_root) {
   switch (t->kind) {
   case TypeKind_OPTIONAL:
     codegen_emit_derived_defs(g, t->optional.inner, false);
@@ -321,7 +322,7 @@ void codegen_emit_derived_defs(Gen *g, const Type *t, bool is_root) {
   }
 }
 
-void codegen_emit_root_def(Gen *g, const UserType *ut, const char *cname) {
+void codegen_emit_root_def(const Gen *g, const UserType *ut, const char *cname) {
   StrBuf *out = g->out;
   const Type *t = ut->type;
   switch (t->kind) {
@@ -397,7 +398,7 @@ static int cmp_u32(const void *a, const void *b) {
   return ua > ub ? 1 : 0;
 }
 
-void codegen_emit_shared_typedefs(Gen *g) {
+void codegen_emit_shared_typedefs(const Gen *g) {
   StrBuf *out = g->out;
   if (g->str_caps.len > 0) {
     qsort(g->str_caps.ptr, g->str_caps.len, sizeof(u32), cmp_u32);

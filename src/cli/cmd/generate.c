@@ -28,7 +28,7 @@ static bool file_exists(const char *path) {
   if (file == nullptr) {
     return false;
   }
-  (void)fclose(file);
+  fclose(file);
   return true;
 }
 
@@ -58,8 +58,8 @@ static void stem_of(const char *path, StrBuf *out) {
   for (size_t i = 0; i <= n && ok; i++) {
     if ((i == n || path[i] == '/') && partial.len > 0) {
       if (mkdir(partial.data, 0755) != 0 && errno != EEXIST) {
-        (void)fprintf(stderr, "%s: error: cannot create directory '%s': %s\n", cli_prog_name(),
-                      partial.data, strerror(errno));
+        fprintf(stderr, "%s: error: cannot create directory '%s': %s\n", cli_prog_name(),
+                partial.data, strerror(errno));
         ok = false;
       }
     }
@@ -74,8 +74,7 @@ static void stem_of(const char *path, StrBuf *out) {
 [[nodiscard]] static bool write_output(const char *path, const char *data, size_t len) {
   FILE *file = fopen(path, "wb");
   if (file == nullptr) {
-    (void)fprintf(stderr, "%s: error: cannot write '%s': %s\n", cli_prog_name(), path,
-                  strerror(errno));
+    fprintf(stderr, "%s: error: cannot write '%s': %s\n", cli_prog_name(), path, strerror(errno));
     return false;
   }
   bool ok = fwrite(data, 1, len, file) == len;
@@ -85,8 +84,8 @@ static void stem_of(const char *path, StrBuf *out) {
     ok = false;
   }
   if (!ok) {
-    (void)fprintf(stderr, "%s: error: cannot write '%s': %s\n", cli_prog_name(), path,
-                  strerror(write_errno));
+    fprintf(stderr, "%s: error: cannot write '%s': %s\n", cli_prog_name(), path,
+            strerror(write_errno));
   }
   return ok;
 }
@@ -135,7 +134,7 @@ int cmd_generate(const Cli *cli) {
     strbuf_append(&discovered, "/barec.conf");
     if (file_exists(discovered.data)) {
       config_path = discovered.data;
-      (void)fprintf(stderr, "%s: using config '%s'\n", cli_prog_name(), config_path);
+      fprintf(stderr, "%s: using config '%s'\n", cli_prog_name(), config_path);
     }
   }
   if (config_path != nullptr && !config_load(&cfg, config_path, &diag)) {
