@@ -1,0 +1,51 @@
+name: release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-24.04
+    env:
+      CC: gcc-15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install toolchain
+        run: |
+          sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
+          sudo apt-get install -y gcc-15
+          pipx install meson==1.12.0
+          pipx install ninja
+
+      - name: Test
+        run: |
+          meson setup build-test
+          meson test -C build-test --print-errorlogs
+
+      - name: Build static binary
+        run: |
+          meson setup build-release --buildtype=release -Db_sanitize=none -Dc_link_args=-static
+          meson compile -C build-release
+          cp build-release/barec barec-linux-x86_64
+          strip barec-linux-x86_64
+
+      - name: Verify static
+        run: |
+          file barec-linux-x86_64
+          ! ldd barec-linux-x86_64
+          ./barec-linux-x86_64 --version
+
+      - name: Create release
+        run: |
+          case "$GITHUB_REF_NAME" in
+          *-rc*) extra=--prerelease ;;
+          *) extra= ;;
+          esac
+          gh release create "$GITHUB_REF_NAME" barec-linux-x86_64 --generate-notes $extra
+        env:
+          GH_TOKEN: ${{ github.token }}
