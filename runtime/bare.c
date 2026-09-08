@@ -79,10 +79,7 @@ BareStatus bare_write_uint(BareWriter *w, uint64_t value) {
 
 BareStatus bare_read_int(BareReader *r, int64_t *out) {
   uint64_t raw;
-  BareStatus status = bare_read_uint(r, &raw);
-  if (status != BareStatus_OK) {
-    return status;
-  }
+  BARE_TRY(bare_read_uint(r, &raw));
   if ((raw & 1) != 0) {
     *out = -(int64_t)(raw >> 1) - 1;
   } else {
@@ -105,30 +102,21 @@ BareStatus bare_read_u8(BareReader *r, uint8_t *out) { return read_bytes(r, out,
 
 BareStatus bare_read_u16(BareReader *r, uint16_t *out) {
   uint8_t b[2];
-  BareStatus status = read_bytes(r, b, sizeof(b));
-  if (status != BareStatus_OK) {
-    return status;
-  }
+  BARE_TRY(read_bytes(r, b, sizeof(b)));
   *out = (uint16_t)((uint16_t)b[0] | ((uint16_t)b[1] << 8));
   return BareStatus_OK;
 }
 
 BareStatus bare_read_u32(BareReader *r, uint32_t *out) {
   uint8_t b[4];
-  BareStatus status = read_bytes(r, b, sizeof(b));
-  if (status != BareStatus_OK) {
-    return status;
-  }
+  BARE_TRY(read_bytes(r, b, sizeof(b)));
   *out = (uint32_t)b[0] | ((uint32_t)b[1] << 8) | ((uint32_t)b[2] << 16) | ((uint32_t)b[3] << 24);
   return BareStatus_OK;
 }
 
 BareStatus bare_read_u64(BareReader *r, uint64_t *out) {
   uint8_t b[8];
-  BareStatus status = read_bytes(r, b, sizeof(b));
-  if (status != BareStatus_OK) {
-    return status;
-  }
+  BARE_TRY(read_bytes(r, b, sizeof(b)));
   uint64_t value = 0;
   for (size_t i = 0; i < sizeof(b); i++) {
     value |= (uint64_t)b[i] << (8 * i);
@@ -159,40 +147,28 @@ BareStatus bare_write_u64(BareWriter *w, uint64_t value) {
 
 BareStatus bare_read_i8(BareReader *r, int8_t *out) {
   uint8_t u;
-  BareStatus status = bare_read_u8(r, &u);
-  if (status != BareStatus_OK) {
-    return status;
-  }
+  BARE_TRY(bare_read_u8(r, &u));
   memcpy(out, &u, sizeof(u));
   return BareStatus_OK;
 }
 
 BareStatus bare_read_i16(BareReader *r, int16_t *out) {
   uint16_t u;
-  BareStatus status = bare_read_u16(r, &u);
-  if (status != BareStatus_OK) {
-    return status;
-  }
+  BARE_TRY(bare_read_u16(r, &u));
   memcpy(out, &u, sizeof(u));
   return BareStatus_OK;
 }
 
 BareStatus bare_read_i32(BareReader *r, int32_t *out) {
   uint32_t u;
-  BareStatus status = bare_read_u32(r, &u);
-  if (status != BareStatus_OK) {
-    return status;
-  }
+  BARE_TRY(bare_read_u32(r, &u));
   memcpy(out, &u, sizeof(u));
   return BareStatus_OK;
 }
 
 BareStatus bare_read_i64(BareReader *r, int64_t *out) {
   uint64_t u;
-  BareStatus status = bare_read_u64(r, &u);
-  if (status != BareStatus_OK) {
-    return status;
-  }
+  BARE_TRY(bare_read_u64(r, &u));
   memcpy(out, &u, sizeof(u));
   return BareStatus_OK;
 }
@@ -223,20 +199,14 @@ BareStatus bare_write_i64(BareWriter *w, int64_t value) {
 
 BareStatus bare_read_f32(BareReader *r, float *out) {
   uint32_t bits;
-  BareStatus status = bare_read_u32(r, &bits);
-  if (status != BareStatus_OK) {
-    return status;
-  }
+  BARE_TRY(bare_read_u32(r, &bits));
   memcpy(out, &bits, sizeof(bits));
   return BareStatus_OK;
 }
 
 BareStatus bare_read_f64(BareReader *r, double *out) {
   uint64_t bits;
-  BareStatus status = bare_read_u64(r, &bits);
-  if (status != BareStatus_OK) {
-    return status;
-  }
+  BARE_TRY(bare_read_u64(r, &bits));
   memcpy(out, &bits, sizeof(bits));
   return BareStatus_OK;
 }
@@ -255,10 +225,7 @@ BareStatus bare_write_f64(BareWriter *w, double value) {
 
 BareStatus bare_read_bool(BareReader *r, bool *out) {
   uint8_t u;
-  BareStatus status = bare_read_u8(r, &u);
-  if (status != BareStatus_OK) {
-    return status;
-  }
+  BARE_TRY(bare_read_u8(r, &u));
   if (u > 1) {
     return BareStatus_INVALID_BOOL;
   }
@@ -271,10 +238,7 @@ BareStatus bare_write_bool(BareWriter *w, bool value) { return bare_write_u8(w, 
 BARE_NODISCARD static BareStatus read_prefixed(BareReader *r, uint8_t buf[], uint32_t cap,
                                                uint32_t *len, bool validate_utf8) {
   uint64_t n;
-  BareStatus status = bare_read_uint(r, &n);
-  if (status != BareStatus_OK) {
-    return status;
-  }
+  BARE_TRY(bare_read_uint(r, &n));
   if (n > cap) {
     return BareStatus_CAP_EXCEEDED;
   }
@@ -306,18 +270,12 @@ BareStatus bare_write_str(BareWriter *w, const char buf[], uint32_t len) {
   if (!bare_utf8_valid((const uint8_t *)buf, len)) {
     return BareStatus_INVALID_UTF8;
   }
-  BareStatus status = bare_write_uint(w, len);
-  if (status != BareStatus_OK) {
-    return status;
-  }
+  BARE_TRY(bare_write_uint(w, len));
   return write_bytes(w, (const uint8_t *)buf, len);
 }
 
 BareStatus bare_write_data(BareWriter *w, const uint8_t buf[], uint32_t len) {
-  BareStatus status = bare_write_uint(w, len);
-  if (status != BareStatus_OK) {
-    return status;
-  }
+  BARE_TRY(bare_write_uint(w, len));
   return write_bytes(w, buf, len);
 }
 
