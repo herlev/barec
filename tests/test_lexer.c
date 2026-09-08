@@ -101,13 +101,11 @@ static void test_no_space_separation(void) {
 }
 
 static void test_integer_ident_boundary(void) {
-  TokenList list = lex_ok("1abc");
-  assert(list.len == 3);
-  assert(list.tokens[0].kind == TokenKind_INTEGER);
-  assert(list.tokens[0].integer == 1);
-  assert(list.tokens[1].kind == TokenKind_IDENT);
-  assert(str_eq(list.tokens[1].text, STR("abc")));
-  token_list_free(&list);
+  Diag diag = lex_fail("1abc");
+  assert(diag.loc.line == 1 && diag.loc.column == 2);
+
+  diag = lex_fail("enum {FOO=1BAR}");
+  assert(diag.loc.line == 1 && diag.loc.column == 12);
 }
 
 static void test_locations(void) {

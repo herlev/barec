@@ -131,6 +131,10 @@ static Token lex_ident(Lexer *lx) {
     value = (value * 10) + digit;
     advance(lx);
   }
+  if (!at_end(lx) && is_ident_char(peek(lx))) {
+    diag_set(diag, lx->loc, "missing whitespace after integer literal");
+    return false;
+  }
   *out = (Token){.kind = TokenKind_INTEGER,
                  .text = {.data = lx->src + start, .len = lx->pos - start},
                  .integer = value,
