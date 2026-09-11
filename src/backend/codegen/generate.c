@@ -34,6 +34,9 @@ static void emit_function_decls(Gen *g, const char *cname) {
   char *fn_equal = codegen_type_fn_name(g, cname, "equal");
   strbuf_appendf(out, "%s bool %s(const %s *a, const %s *b);\n", nd, fn_equal, cname, cname);
   free(fn_equal);
+  char *fn_skip = codegen_type_fn_name(g, cname, "skip");
+  strbuf_appendf(out, "%s BareStatus %s(BareReader *r);\n", nd, fn_skip);
+  free(fn_skip);
   free(fn_read);
   free(fn_write);
   free(fn_decode);

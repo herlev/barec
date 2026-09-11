@@ -203,6 +203,49 @@ static void test_equality(void) {
   assert(!wide_equal(&w1, &w2));
 }
 
+static void test_skip(void) {
+  Packet first = {
+      .kind = PacketKind_B,
+      .choice = {.tag = PacketChoiceTag_U32, .value.u32 = 1},
+      .tags = {.has_value = true, .value = {.len = 1, .items = {BARE_STR64("frame")}}},
+      .seq = 7,
+  };
+  Packet second = first;
+  second.seq = 8;
+  uint8_t buf[2 * PACKET_MAX_SIZE];
+  size_t w1 = 0;
+  size_t w2 = 0;
+  assert(packet_encode(&first, buf, sizeof(buf), &w1) == BareStatus_OK);
+  assert(packet_encode(&second, buf + w1, sizeof(buf) - w1, &w2) == BareStatus_OK);
+
+  BareReader r = bare_reader_new(buf, w1 + w2);
+  assert(packet_skip(&r) == BareStatus_OK);
+  assert(r.pos == w1);
+  Packet out = {};
+  assert(packet_read(&r, &out) == BareStatus_OK);
+  assert(bare_reader_remaining(&r) == 0);
+  assert(packet_equal(&second, &out));
+
+  uint8_t big[21] = {20};
+  Row row = {};
+  assert(row_decode(&row, big, sizeof(big)) == BareStatus_CAP_EXCEEDED);
+  r = bare_reader_new(big, sizeof(big));
+  assert(row_skip(&r) == BareStatus_OK);
+  assert(bare_reader_remaining(&r) == 0);
+
+  const uint8_t bad_opt[] = {0x02, 0x00};
+  r = bare_reader_new(bad_opt, sizeof(bad_opt));
+  assert(maybe_u8_skip(&r) == BareStatus_INVALID_OPTIONAL);
+
+  const uint8_t bad_tag[] = {0x05};
+  r = bare_reader_new(bad_tag, sizeof(bad_tag));
+  assert(wide_skip(&r) == BareStatus_INVALID_TAG);
+
+  const uint8_t trunc[] = {0x03, 0x01};
+  r = bare_reader_new(trunc, sizeof(trunc));
+  assert(row_skip(&r) == BareStatus_SHORT_READ);
+}
+
 static void test_enum_names(void) {
   assert(strcmp(mode_name(Mode_OFF), "OFF") == 0);
   assert(strcmp(mode_name(Mode_TURBO), "TURBO") == 0);
@@ -241,6 +284,7 @@ int main(void) {
   test_decode_cap_exceeded();
   test_anon_data_key_map();
   test_equality();
+  test_skip();
   test_enum_names();
   test_huge_constants();
   return 0;

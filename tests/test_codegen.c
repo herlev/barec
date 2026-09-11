@@ -234,6 +234,22 @@ static void test_equal_fns(void) {
   free_generated(&gen);
 }
 
+static void test_skip_fns(void) {
+  Config cfg = config_default();
+  Generated gen = generate_ok("type Pos struct { x: f32 y: f32 }\n"
+                              "type Msg struct { pos: Pos note: str }\n",
+                              &cfg);
+  assert(strstr(gen.header.data, "[[nodiscard]] BareStatus msg_skip(BareReader *r);") != nullptr);
+  assert(strstr(gen.source.data, "BareStatus msg_skip(BareReader *r) {\n"
+                                 "  BARE_TRY(bare_reader_skip(r, 8));") != nullptr);
+  free_generated(&gen);
+
+  Generated fixed_enum = generate_ok("type E enum { A B }", &cfg);
+  assert(strstr(fixed_enum.source.data,
+                "BareStatus e_skip(BareReader *r) {\n  BARE_TRY(bare_skip_uint(r));") != nullptr);
+  free_generated(&fixed_enum);
+}
+
 static void test_size_defines(void) {
   Config cfg = config_default();
   Generated gen = generate_ok("type Point struct { x: f32 y: f32 }\n"
@@ -284,6 +300,7 @@ int main(void) {
   test_type_suffix();
   test_enum_name_fns();
   test_equal_fns();
+  test_skip_fns();
   test_size_defines();
   test_name_collision();
   return 0;

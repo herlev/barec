@@ -28,6 +28,7 @@ barec_lib = static_library(
     'src/backend/codegen/read.c',
     'src/backend/codegen/scan.c',
     'src/backend/codegen/size.c',
+    'src/backend/codegen/skip.c',
     'src/backend/codegen/write.c',
     'src/backend/config.c',
     'src/backend/names.c',

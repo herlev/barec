@@ -117,10 +117,23 @@ void codegen_emit_derived_defs(const Gen *g, const Type *t, bool is_root);
 void codegen_emit_root_def(const Gen *g, const UserType *ut, const char *cname);
 void codegen_emit_shared_typedefs(const Gen *g);
 
+typedef struct {
+  u64 max;
+  bool fixed;
+} WireSize;
+
+/// The maximum encoded size of a type under the resolved caps, saturating
+/// at UINT64_MAX. fixed means every encoding has exactly that size.
+WireSize codegen_wire_size(const Gen *g, const Type *t);
+
 /// Emits the X_SIZE or X_MAX_SIZE define for a root type, computed from
 /// the caps. SIZE when every encoding has the same length, MAX_SIZE
 /// otherwise.
 void codegen_emit_size_define(const Gen *g, const Type *t, const char *cname);
+
+/// Emits a capless structural skip function. Skips validate varints,
+/// optional markers, and union tags, but not bool, enum, or UTF-8 content.
+void codegen_emit_skip_fn(const Gen *g, const Type *t, const char *cname, bool is_public);
 void codegen_indent(StrBuf *out, int indent);
 
 /// Emit a complete read/write function definition for a named type. Derived

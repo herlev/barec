@@ -35,6 +35,11 @@ bool public_key_equal(const PublicKey *a, const PublicKey *b) {
   return memcmp(a->data, b->data, 128) == 0;
 }
 
+BareStatus public_key_skip(BareReader *r) {
+  BARE_TRY(bare_reader_skip(r, 128));
+  return BareStatus_OK;
+}
+
 BareStatus time_read(BareReader *r, Time *out) {
   return bare_read_str(r, out->data, 64, &out->len);
 }
@@ -64,6 +69,15 @@ BareStatus time_encode(const Time *value, uint8_t buf[], size_t cap, size_t *wri
 
 bool time_equal(const Time *a, const Time *b) {
   return a->len == b->len && memcmp(a->data, b->data, a->len) == 0;
+}
+
+BareStatus time_skip(BareReader *r) {
+  {
+    uint64_t n0;
+    BARE_TRY(bare_read_uint(r, &n0));
+    BARE_TRY(bare_reader_skip(r, n0));
+  }
+  return BareStatus_OK;
 }
 
 BareStatus department_read(BareReader *r, Department *out) {
@@ -115,6 +129,11 @@ BareStatus department_encode(const Department *value, uint8_t buf[], size_t cap,
 
 bool department_equal(const Department *a, const Department *b) {
   return *a == *b;
+}
+
+BareStatus department_skip(BareReader *r) {
+  BARE_TRY(bare_skip_uint(r));
+  return BareStatus_OK;
 }
 
 const char *department_name(Department value) {
@@ -173,6 +192,17 @@ bool address_equal(const Address *a, const Address *b) {
     }
   }
   return true;
+}
+
+BareStatus address_skip(BareReader *r) {
+  for (uint64_t i0 = 0; i0 < 4; i0++) {
+    {
+      uint64_t n1;
+      BARE_TRY(bare_read_uint(r, &n1));
+      BARE_TRY(bare_reader_skip(r, n1));
+    }
+  }
+  return BareStatus_OK;
 }
 
 BareStatus customer_read(BareReader *r, Customer *out) {
@@ -295,6 +325,44 @@ bool customer_equal(const Customer *a, const Customer *b) {
     }
   }
   return true;
+}
+
+BareStatus customer_skip(BareReader *r) {
+  {
+    uint64_t n0;
+    BARE_TRY(bare_read_uint(r, &n0));
+    BARE_TRY(bare_reader_skip(r, n0));
+  }
+  {
+    uint64_t n0;
+    BARE_TRY(bare_read_uint(r, &n0));
+    BARE_TRY(bare_reader_skip(r, n0));
+  }
+  BARE_TRY(address_skip(r));
+  {
+    uint64_t n0;
+    BARE_TRY(bare_read_uint(r, &n0));
+    for (uint64_t i0 = 0; i0 < n0; i0++) {
+      BARE_TRY(bare_reader_skip(r, 12));
+    }
+  }
+  {
+    uint64_t n0;
+    BARE_TRY(bare_read_uint(r, &n0));
+    for (uint64_t i0 = 0; i0 < n0; i0++) {
+      {
+        uint64_t n1;
+        BARE_TRY(bare_read_uint(r, &n1));
+        BARE_TRY(bare_reader_skip(r, n1));
+      }
+      {
+        uint64_t n1;
+        BARE_TRY(bare_read_uint(r, &n1));
+        BARE_TRY(bare_reader_skip(r, n1));
+      }
+    }
+  }
+  return BareStatus_OK;
 }
 
 BareStatus employee_read(BareReader *r, Employee *out) {
@@ -421,6 +489,49 @@ bool employee_equal(const Employee *a, const Employee *b) {
   return true;
 }
 
+BareStatus employee_skip(BareReader *r) {
+  {
+    uint64_t n0;
+    BARE_TRY(bare_read_uint(r, &n0));
+    BARE_TRY(bare_reader_skip(r, n0));
+  }
+  {
+    uint64_t n0;
+    BARE_TRY(bare_read_uint(r, &n0));
+    BARE_TRY(bare_reader_skip(r, n0));
+  }
+  BARE_TRY(address_skip(r));
+  BARE_TRY(department_skip(r));
+  BARE_TRY(time_skip(r));
+  {
+    uint8_t p0;
+    BARE_TRY(bare_read_u8(r, &p0));
+    if (p0 > 1) {
+      return BareStatus_INVALID_OPTIONAL;
+    }
+    if (p0 == 1) {
+      BARE_TRY(bare_reader_skip(r, 128));
+    }
+  }
+  {
+    uint64_t n0;
+    BARE_TRY(bare_read_uint(r, &n0));
+    for (uint64_t i0 = 0; i0 < n0; i0++) {
+      {
+        uint64_t n1;
+        BARE_TRY(bare_read_uint(r, &n1));
+        BARE_TRY(bare_reader_skip(r, n1));
+      }
+      {
+        uint64_t n1;
+        BARE_TRY(bare_read_uint(r, &n1));
+        BARE_TRY(bare_reader_skip(r, n1));
+      }
+    }
+  }
+  return BareStatus_OK;
+}
+
 BareStatus person_read(BareReader *r, Person *out) {
   uint64_t tag;
   BARE_TRY(bare_read_uint(r, &tag));
@@ -496,4 +607,22 @@ bool person_equal(const Person *a, const Person *b) {
     break;
   }
   return true;
+}
+
+BareStatus person_skip(BareReader *r) {
+  uint64_t tag;
+  BARE_TRY(bare_read_uint(r, &tag));
+  switch (tag) {
+  case 0:
+    BARE_TRY(customer_skip(r));
+    break;
+  case 1:
+    BARE_TRY(employee_skip(r));
+    break;
+  case 2:
+    break;
+  default:
+    return BareStatus_INVALID_TAG;
+  }
+  return BareStatus_OK;
 }

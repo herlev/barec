@@ -21,6 +21,19 @@ BareWriter bare_writer_new(uint8_t data[], size_t cap) {
 
 size_t bare_reader_remaining(const BareReader *r) { return r->len - r->pos; }
 
+BareStatus bare_reader_skip(BareReader *r, uint64_t n) {
+  if ((uint64_t)bare_reader_remaining(r) < n) {
+    return BareStatus_SHORT_READ;
+  }
+  r->pos += (size_t)n;
+  return BareStatus_OK;
+}
+
+BareStatus bare_skip_uint(BareReader *r) {
+  uint64_t value;
+  return bare_read_uint(r, &value);
+}
+
 BARE_NODISCARD static BareStatus read_bytes(BareReader *r, uint8_t out[], size_t n) {
   if (bare_reader_remaining(r) < n) {
     return BareStatus_SHORT_READ;

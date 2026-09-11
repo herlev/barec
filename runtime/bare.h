@@ -69,6 +69,13 @@ BareReader bare_reader_new(const uint8_t data[], size_t len);
 BareWriter bare_writer_new(uint8_t data[], size_t cap);
 size_t bare_reader_remaining(const BareReader *r);
 
+/// Advances past n octets without reading them, SHORT_READ if fewer remain.
+BARE_NODISCARD BareStatus bare_reader_skip(BareReader *r, uint64_t n);
+
+/// Reads and discards one uint, enforcing the same encoding rules as
+/// bare_read_uint.
+BARE_NODISCARD BareStatus bare_skip_uint(BareReader *r);
+
 /// uint/int are ULEB128 with zig-zag for int, at most 10 octets and 64 bits.
 /// Reads reject non-minimal encodings with OVERLONG_VARINT and encodings
 /// exceeding 64 bits or 10 octets with VARINT_TOO_LONG.

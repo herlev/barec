@@ -239,6 +239,21 @@ static void test_data(void) {
   assert(memcmp(out, payload, 16) == 0);
 }
 
+static void test_skip(void) {
+  const uint8_t data[] = {1, 2, 3, 0x80, 0x01};
+  BareReader r = bare_reader_new(data, sizeof(data));
+  assert(bare_reader_skip(&r, 3) == BareStatus_OK);
+  assert(bare_reader_remaining(&r) == 2);
+  assert(bare_skip_uint(&r) == BareStatus_OK);
+  assert(bare_reader_remaining(&r) == 0);
+  assert(bare_reader_skip(&r, 0) == BareStatus_OK);
+  assert(bare_reader_skip(&r, 1) == BareStatus_SHORT_READ);
+
+  const uint8_t overlong[] = {0x80, 0x00};
+  r = bare_reader_new(overlong, sizeof(overlong));
+  assert(bare_skip_uint(&r) == BareStatus_OVERLONG_VARINT);
+}
+
 static void test_short_write(void) {
   uint8_t buf[2];
   BareWriter w = bare_writer_new(buf, sizeof(buf));
@@ -300,6 +315,7 @@ int main(void) {
   test_bool();
   test_str();
   test_data();
+  test_skip();
   test_short_write();
   test_str_helpers();
   test_utf8();

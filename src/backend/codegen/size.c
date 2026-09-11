@@ -11,11 +11,6 @@
 #include <stddef.h>
 #include <stdint.h>
 
-typedef struct {
-  u64 max;
-  bool fixed;
-} WireSize;
-
 static u64 sat_add(u64 a, u64 b) {
   if (a > UINT64_MAX - b) {
     return UINT64_MAX;
@@ -39,8 +34,6 @@ static u64 uleb_len(u64 value) {
   return n;
 }
 
-static WireSize wire_size(const Gen *g, const Type *t);
-
 static WireSize enum_wire_size(const Type *t) {
   assert(t->enum_values.len > 0 && "the parser rejects empty enums");
   u64 min = UINT64_MAX;
@@ -62,7 +55,7 @@ static WireSize union_wire_size(const Gen *g, const Type *t) {
   for (size_t i = 0; i < t->union_members.len; i++) {
     const UnionMember *m = &t->union_members.members[i];
     assert(m->tag.has_value && "check_schema assigns implicit union tags");
-    WireSize member = wire_size(g, m->type);
+    WireSize member = codegen_wire_size(g, m->type);
     u64 total = sat_add(uleb_len(m->tag.value), member.max);
     max = MAX(max, total);
     min = MIN(min, total);
@@ -75,14 +68,14 @@ static WireSize struct_wire_size(const Gen *g, const Type *t) {
   u64 sum = 0;
   bool fixed = true;
   for (size_t i = 0; i < t->struct_fields.len; i++) {
-    WireSize field = wire_size(g, t->struct_fields.fields[i].type);
+    WireSize field = codegen_wire_size(g, t->struct_fields.fields[i].type);
     sum = sat_add(sum, field.max);
     fixed = (bool)(fixed && field.fixed);
   }
   return (WireSize){.max = sum, .fixed = fixed};
 }
 
-static WireSize wire_size(const Gen *g, const Type *t) {
+WireSize codegen_wire_size(const Gen *g, const Type *t) {
   switch (t->kind) {
   case TypeKind_UINT:
   case TypeKind_INT:
@@ -118,11 +111,11 @@ static WireSize wire_size(const Gen *g, const Type *t) {
   case TypeKind_ENUM:
     return enum_wire_size(t);
   case TypeKind_OPTIONAL: {
-    WireSize inner = wire_size(g, t->optional.inner);
+    WireSize inner = codegen_wire_size(g, t->optional.inner);
     return (WireSize){.max = sat_add(1, inner.max), .fixed = false};
   }
   case TypeKind_LIST: {
-    WireSize elem = wire_size(g, t->list.elem);
+    WireSize elem = codegen_wire_size(g, t->list.elem);
     if (t->list.length.has_value) {
       return (WireSize){.max = sat_mul(t->list.length.value, elem.max), .fixed = elem.fixed};
     }
@@ -130,8 +123,8 @@ static WireSize wire_size(const Gen *g, const Type *t) {
     return (WireSize){.max = sat_add(uleb_len(cap), sat_mul(cap, elem.max)), .fixed = false};
   }
   case TypeKind_MAP: {
-    WireSize key = wire_size(g, t->map.key);
-    WireSize value = wire_size(g, t->map.value);
+    WireSize key = codegen_wire_size(g, t->map.key);
+    WireSize value = codegen_wire_size(g, t->map.value);
     u64 cap = codegen_cap_of(g, t);
     u64 entry = sat_add(key.max, value.max);
     return (WireSize){.max = sat_add(uleb_len(cap), sat_mul(cap, entry)), .fixed = false};
@@ -142,13 +135,13 @@ static WireSize wire_size(const Gen *g, const Type *t) {
     return struct_wire_size(g, t);
   case TypeKind_USER:
     assert(t->user.resolved != nullptr && "check_schema resolves user references");
-    return wire_size(g, t->user.resolved);
+    return codegen_wire_size(g, t->user.resolved);
   }
   UNREACHABLE();
 }
 
 void codegen_emit_size_define(const Gen *g, const Type *t, const char *cname) {
-  WireSize size = wire_size(g, t);
+  WireSize size = codegen_wire_size(g, t);
   StrBuf name = {};
   Str base = {.data = cname, .len = codegen_type_base_len(g->cfg, cname)};
   name_render(base, CaseStyle_SCREAMING, &name);
