@@ -29,10 +29,14 @@ typedef struct {
 
 #define PUBLIC_KEY_SIZE 128
 
+#define PUBLIC_KEY_SCHEMA_HASH UINT64_C(0x6a4ff4d1636baa72)
+
 /// ISO 8601
 typedef BareStr64 Time;
 
 #define TIME_MAX_SIZE 65
+
+#define TIME_SCHEMA_HASH UINT64_C(0x6bc57ea2b6faf2c4)
 
 typedef enum : uint8_t {
   Department_ACCOUNTING = 0,
@@ -45,12 +49,16 @@ typedef enum : uint8_t {
 
 #define DEPARTMENT_SIZE 1
 
+#define DEPARTMENT_SCHEMA_HASH UINT64_C(0x02663e8ab98ee80d)
+
 /// street, city, state, country
 typedef struct {
   BareStr64 items[4];
 } Address;
 
 #define ADDRESS_MAX_SIZE 260
+
+#define ADDRESS_SCHEMA_HASH UINT64_C(0x52fd57d98cdde247)
 
 typedef struct {
   BareStr64 name;
@@ -74,6 +82,8 @@ typedef struct {
 
 #define CUSTOMER_MAX_SIZE 1528
 
+#define CUSTOMER_SCHEMA_HASH UINT64_C(0x0cc49bd3a841ee2b)
+
 typedef struct {
   BareStr64 name;
   BareStr64 email;
@@ -95,6 +105,8 @@ typedef struct {
 
 #define EMPLOYEE_MAX_SIZE 1626
 
+#define EMPLOYEE_SCHEMA_HASH UINT64_C(0x71605ee9fffc63ef)
+
 typedef enum : uint8_t {
   PersonTag_CUSTOMER = 0,
   PersonTag_EMPLOYEE = 1,
@@ -110,6 +122,8 @@ typedef struct {
 } Person;
 
 #define PERSON_MAX_SIZE 1627
+
+#define PERSON_SCHEMA_HASH UINT64_C(0xb0e7ed03088c770a)
 
 [[nodiscard]] BareStatus public_key_read(BareReader *r, PublicKey *out);
 [[nodiscard]] BareStatus public_key_write(BareWriter *w, const PublicKey *value);

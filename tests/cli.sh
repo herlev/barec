@@ -30,6 +30,8 @@ type Point struct {
 EOF
 
 "$BAREC" check "$TMP/msg.bare"
+"$BAREC" hash "$TMP/msg.bare" | grep -q "^Point 0x"
+if "$BAREC" hash 2> /dev/null; then exit 1; fi
 "$BAREC" check -- "$TMP/msg.bare"
 "$BAREC" check "$TMP/msg.bare" -h | grep -q "^Usage:"
 "$BAREC" -- "$TMP/msg.bare"

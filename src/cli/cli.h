@@ -8,6 +8,7 @@ typedef enum : u8 {
   CliCommand_GENERATE,
   CliCommand_CHECK,
   CliCommand_CONFIG,
+  CliCommand_HASH,
 } CliCommand;
 
 /// Parsed command line. GENERATE fields left null fall back to: out_dir the
@@ -29,6 +30,9 @@ typedef struct {
     struct {
       const char *schema_path;
     } check;
+    struct {
+      const char *schema_path;
+    } hash;
   };
 } Cli;
 

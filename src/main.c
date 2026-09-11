@@ -10,5 +10,7 @@ int main(int argc, char **argv) {
     return cmd_check(&cli);
   case CliCommand_CONFIG:
     return cmd_config();
+  case CliCommand_HASH:
+    return cmd_hash(&cli);
   }
 }

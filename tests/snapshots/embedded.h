@@ -27,6 +27,8 @@ typedef uint64_t user_id_t;
 
 #define USER_ID_SIZE 8
 
+#define USER_ID_SCHEMA_HASH UINT64_C(0x0f25b8a696d73eea)
+
 typedef enum : uint8_t {
   COLOR_RED = 0,
   COLOR_GREEN = 1,
@@ -34,6 +36,8 @@ typedef enum : uint8_t {
 } color_t;
 
 #define COLOR_SIZE 1
+
+#define COLOR_SCHEMA_HASH UINT64_C(0xa4d398d4719edb87)
 
 typedef struct {
   BareStr64 display_name;
@@ -49,12 +53,16 @@ typedef struct {
 
 #define PROFILE_MAX_SIZE 140
 
+#define PROFILE_SCHEMA_HASH UINT64_C(0xb4c71ea44c561a1c)
+
 typedef struct {
   user_id_t user;
   uint64_t when;
 } login_event_t;
 
 #define LOGIN_EVENT_SIZE 16
+
+#define LOGIN_EVENT_SCHEMA_HASH UINT64_C(0x98e7798f4c4eab58)
 
 typedef enum : uint8_t {
   EVENT_TAG_LOGIN_EVENT = 0,
@@ -70,6 +78,8 @@ typedef struct {
 } event_t;
 
 #define EVENT_MAX_SIZE 141
+
+#define EVENT_SCHEMA_HASH UINT64_C(0xdd088848706b0f72)
 
 [[nodiscard]] BareStatus user_id_read(BareReader *r, user_id_t *out);
 [[nodiscard]] BareStatus user_id_write(BareWriter *w, const user_id_t *value);

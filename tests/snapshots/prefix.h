@@ -27,6 +27,8 @@ typedef uint64_t AcmeUserId;
 
 #define ACME_USER_ID_SIZE 8
 
+#define ACME_USER_ID_SCHEMA_HASH UINT64_C(0x0f25b8a696d73eea)
+
 typedef enum : uint8_t {
   ACME_RED = 0,
   ACME_GREEN = 1,
@@ -34,6 +36,8 @@ typedef enum : uint8_t {
 } AcmeColor;
 
 #define ACME_COLOR_SIZE 1
+
+#define ACME_COLOR_SCHEMA_HASH UINT64_C(0xa4d398d4719edb87)
 
 typedef struct {
   BareStr64 display_name;
@@ -49,12 +53,16 @@ typedef struct {
 
 #define ACME_PROFILE_MAX_SIZE 140
 
+#define ACME_PROFILE_SCHEMA_HASH UINT64_C(0xb4c71ea44c561a1c)
+
 typedef struct {
   AcmeUserId user;
   uint64_t when;
 } AcmeLoginEvent;
 
 #define ACME_LOGIN_EVENT_SIZE 16
+
+#define ACME_LOGIN_EVENT_SCHEMA_HASH UINT64_C(0x98e7798f4c4eab58)
 
 typedef enum : uint8_t {
   ACME_LOGIN_EVENT = 0,
@@ -70,6 +78,8 @@ typedef struct {
 } AcmeEvent;
 
 #define ACME_EVENT_MAX_SIZE 141
+
+#define ACME_EVENT_SCHEMA_HASH UINT64_C(0xdd088848706b0f72)
 
 [[nodiscard]] BareStatus acme_user_id_read(BareReader *r, AcmeUserId *out);
 [[nodiscard]] BareStatus acme_user_id_write(BareWriter *w, const AcmeUserId *value);

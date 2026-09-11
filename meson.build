@@ -51,6 +51,7 @@ barec = executable(
     'src/cli/cmd/common.c',
     'src/cli/cmd/config.c',
     'src/cli/cmd/generate.c',
+    'src/cli/cmd/hash.c',
     'src/main.c',
   ],
   include_directories: src_inc,

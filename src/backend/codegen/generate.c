@@ -2,6 +2,7 @@
 
 #include "backend/codegen/internal.h"
 #include "backend/config.h"
+#include "backend/names.h"
 #include "frontend/schema.h"
 #include "util/diag.h"
 #include "util/macros.h"
@@ -15,6 +16,15 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
+
+static void emit_hash_define(const Gen *g, const UserType *t, const char *cname) {
+  StrBuf name = {};
+  Str base = {.data = cname, .len = codegen_type_base_len(g->cfg, cname)};
+  name_render(base, CaseStyle_SCREAMING, &name);
+  strbuf_append(&name, "_SCHEMA_HASH");
+  strbuf_appendf(g->out, "#define %s UINT64_C(0x%016" PRIx64 ")\n\n", name.data, type_wire_hash(t));
+  strbuf_free(&name);
+}
 
 static void emit_function_decls(Gen *g, const char *cname) {
   StrBuf *out = g->out;
@@ -106,6 +116,7 @@ static void emit_header_content(Gen *g, char *const root_names[], const char *ba
     codegen_emit_derived_defs(g, g->schema->ptr[i].type, true);
     codegen_emit_root_def(g, &g->schema->ptr[i], root_names[i]);
     codegen_emit_size_define(g, g->schema->ptr[i].type, root_names[i]);
+    emit_hash_define(g, &g->schema->ptr[i], root_names[i]);
   }
   bool first = true;
   for (size_t i = 0; i < g->schema->len; i++) {

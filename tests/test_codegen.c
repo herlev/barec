@@ -8,6 +8,7 @@
 #include "util/types.h"
 
 #include <assert.h>
+#include <stdint.h>
 #include <string.h>
 
 static const char EXAMPLE_SCHEMA[] = {
@@ -274,6 +275,66 @@ static void test_doc_comments(void) {
   free_generated(&sliced);
 }
 
+static u64 hash_nth(const char *src, size_t i) {
+  Schema schema = {};
+  Diag diag = {};
+  assert(parser_parse(src, strlen(src), &schema, &diag));
+  assert(check_schema(&schema, &diag));
+  u64 hash = type_wire_hash(&schema.ptr[i]);
+  schema_free(&schema);
+  return hash;
+}
+
+static void test_wire_hash(void) {
+  static const char DOC_EXAMPLE[] = "type Celcius u32\n"
+                                    "type Reading struct {\n"
+                                    "  temperature: Celcius\n"
+                                    "  ok: bool\n"
+                                    "}\n";
+  assert(hash_nth(DOC_EXAMPLE, 0) == UINT64_C(0x85d7261b543c3830));
+  assert(hash_nth(DOC_EXAMPLE, 1) == UINT64_C(0x22f8a817c6317c16));
+
+  assert(hash_nth("type A struct { x: u8 }", 0) ==
+         hash_nth("# doc\ntype A struct {\n  x: u8 # trailing\n}\n", 0));
+  assert(hash_nth("type A u8\ntype B u16", 0) == hash_nth("type B u16\ntype A u8", 1));
+  assert(hash_nth("type A struct { x: u8 }", 0) ==
+         hash_nth("type Zed str\ntype A struct { x: u8 }", 1));
+  assert(hash_nth("type Zed str\ntype A struct { x: u8 }", 1) ==
+         hash_nth("type Zed u32\ntype A struct { x: u8 }", 1));
+
+  assert(hash_nth("type A u8", 0) != hash_nth("type B u8", 0));
+  assert(hash_nth("type A struct { x: u8 }", 0) != hash_nth("type A struct { y: u8 }", 0));
+  assert(hash_nth("type E enum { A B }", 0) != hash_nth("type E enum { X Y }", 0));
+  assert(hash_nth("type A u8\ntype W struct { f: A }", 1) !=
+         hash_nth("type W struct { f: u8 }", 0));
+  assert(hash_nth("type Celcius u32\ntype M struct { t: Celcius }", 1) !=
+         hash_nth("type Fahrenheit u32\ntype M struct { t: Fahrenheit }", 1));
+  assert(hash_nth("type A u8\ntype B A\ntype W struct { f: B }", 2) !=
+         hash_nth("type A u8\ntype W struct { f: A }", 1));
+  assert(hash_nth("type A struct { x: u8 y: str }", 0) !=
+         hash_nth("type A struct { y: str x: u8 }", 0));
+  assert(hash_nth("type A struct { x: u8 }", 0) != hash_nth("type A struct { x: u16 }", 0));
+  assert(hash_nth("type E enum { A B }", 0) != hash_nth("type E enum { A B = 9 }", 0));
+  assert(hash_nth("type U union { u8 | str }", 0) != hash_nth("type U union { u8 | str = 9 }", 0));
+  assert(hash_nth("type D data[4]", 0) != hash_nth("type D data[5]", 0));
+  assert(hash_nth("type D data[4]", 0) != hash_nth("type D data", 0));
+  assert(hash_nth("type L list<u8>", 0) != hash_nth("type L list<u8>[4]", 0));
+
+  Config cfg = config_default();
+  Generated gen = generate_ok("type Point struct { x: f32 y: f32 }", &cfg);
+  assert(strstr(gen.header.data, "#define POINT_SCHEMA_HASH UINT64_C(0x") != nullptr);
+  Config prefixed = config_default();
+  prefixed.prefix = STR("acme");
+  Generated pfx = generate_ok("type Point struct { x: f32 y: f32 }", &prefixed);
+  const char *plain = strstr(gen.header.data, "POINT_SCHEMA_HASH UINT64_C");
+  const char *acme = strstr(pfx.header.data, "ACME_POINT_SCHEMA_HASH UINT64_C");
+  assert(plain != nullptr && acme != nullptr);
+  assert(strncmp(plain + strlen("POINT_SCHEMA_HASH "), acme + strlen("ACME_POINT_SCHEMA_HASH "),
+                 strlen("UINT64_C(0x0000000000000000)")) == 0);
+  free_generated(&pfx);
+  free_generated(&gen);
+}
+
 static void test_size_defines(void) {
   Config cfg = config_default();
   Generated gen = generate_ok("type Point struct { x: f32 y: f32 }\n"
@@ -326,6 +387,7 @@ int main(void) {
   test_equal_fns();
   test_skip_fns();
   test_doc_comments();
+  test_wire_hash();
   test_size_defines();
   test_name_collision();
   return 0;

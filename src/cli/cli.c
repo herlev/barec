@@ -17,12 +17,14 @@ static void print_help(FILE *stream) {
           "Usage:\n"
           "  %s generate <schema.bare> [options]\n"
           "  %s check <schema.bare>\n"
-          "  %s config\n\n",
-          prog_name, prog_name, prog_name);
+          "  %s config\n"
+          "  %s hash <schema.bare>\n\n",
+          prog_name, prog_name, prog_name, prog_name);
   fputs("Commands:\n"
         "  generate  Generate C types and (de)serialization code from a schema\n"
         "  check     Parse and validate a schema, printing nothing on success\n"
         "  config    Print an annotated default config file to stdout\n"
+        "  hash      Print each type's schema hash, its declared names and structure\n"
         "\n"
         "Options:\n"
         "  -o, --out-dir <dir>   Directory for generated files  [default: schema's directory]\n"
@@ -170,7 +172,7 @@ static size_t edit_distance(const char *a, const char *b) {
 }
 
 static const char *_Nullable suggest_command(const char *arg) {
-  static const char *const NAMES[] = {"generate", "check", "config"};
+  static const char *const NAMES[] = {"generate", "check", "config", "hash"};
   const char *best = nullptr;
   size_t best_distance = 3;
   for (size_t i = 0; i < ARRAY_LEN(NAMES); i++) {
@@ -190,6 +192,8 @@ static void parse_command(Cli *cli, const char *arg) {
     cli->command = CliCommand_CHECK;
   } else if (strcmp(arg, "config") == 0) {
     cli->command = CliCommand_CONFIG;
+  } else if (strcmp(arg, "hash") == 0) {
+    cli->command = CliCommand_HASH;
   } else if (arg[0] != '-') {
     const char *near = suggest_command(arg);
     if (near != nullptr && strchr(arg, '.') == nullptr) {
@@ -200,6 +204,31 @@ static void parse_command(Cli *cli, const char *arg) {
   } else {
     maybe_help_version(arg);
     usage_error("expected a command or schema file, got '%s'", arg);
+  }
+}
+
+static void set_positional(Cli *cli, const char *arg) {
+  const char **slot = &cli->generate.schema_path;
+  if (cli->command == CliCommand_CHECK) {
+    slot = &cli->check.schema_path;
+  } else if (cli->command == CliCommand_HASH) {
+    slot = &cli->hash.schema_path;
+  } else if (cli->command == CliCommand_CONFIG) {
+    usage_error("unexpected argument '%s'", arg);
+  }
+  if (*slot != nullptr) {
+    usage_error("unexpected argument '%s'", arg);
+  }
+  *slot = arg;
+}
+
+static void require_schema(const Cli *cli) {
+  bool missing =
+      (bool)((cli->command == CliCommand_GENERATE && cli->generate.schema_path == nullptr) ||
+             (cli->command == CliCommand_CHECK && cli->check.schema_path == nullptr) ||
+             (cli->command == CliCommand_HASH && cli->hash.schema_path == nullptr));
+  if (missing) {
+    usage_error("missing schema file");
   }
 }
 
@@ -224,16 +253,7 @@ Cli cli_parse_args(int argc, char **argv) {
       continue;
     }
     if (end_of_options || arg[0] != '-') {
-      const char **slot = &cli.generate.schema_path;
-      if (cli.command == CliCommand_CHECK) {
-        slot = &cli.check.schema_path;
-      } else if (cli.command == CliCommand_CONFIG) {
-        usage_error("unexpected argument '%s'", arg);
-      }
-      if (*slot != nullptr) {
-        usage_error("unexpected argument '%s'", arg);
-      }
-      *slot = arg;
+      set_positional(&cli, arg);
       continue;
     }
     maybe_help_version(arg);
@@ -242,11 +262,6 @@ Cli cli_parse_args(int argc, char **argv) {
     }
     parse_generate_option(&cli, argc, argv, &i);
   }
-  if (cli.command == CliCommand_GENERATE && cli.generate.schema_path == nullptr) {
-    usage_error("missing schema file");
-  }
-  if (cli.command == CliCommand_CHECK && cli.check.schema_path == nullptr) {
-    usage_error("missing schema file");
-  }
+  require_schema(&cli);
   return cli;
 }

@@ -6,3 +6,4 @@
 int cmd_generate(const Cli *cli);
 int cmd_check(const Cli *cli);
 int cmd_config(void);
+int cmd_hash(const Cli *cli);
