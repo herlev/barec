@@ -228,6 +228,7 @@ static void emit_schema_enum_def(const Gen *g, const Type *t) {
     abort();
   }
   for (size_t i = 0; i < n; i++) {
+    assert(t->enum_values.values[i].value.has_value && "check_schema assigns implicit enum values");
     entries[i].raw = t->enum_values.values[i].name;
     entries[i].value = t->enum_values.values[i].value.value;
   }
@@ -258,6 +259,7 @@ static void emit_union_def(const Gen *g, const Type *t) {
     abort();
   }
   for (size_t i = 0; i < n; i++) {
+    assert(t->union_members.members[i].tag.has_value && "check_schema assigns implicit union tags");
     entries[i].raw = (Str){.data = bases->ptr[i], .len = strlen(bases->ptr[i])};
     entries[i].value = t->union_members.members[i].tag.value;
   }

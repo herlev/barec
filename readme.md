@@ -26,6 +26,8 @@ typedef struct {
   } location;
 } Reading;
 
+#define READING_MAX_SIZE 74
+
 [[nodiscard]] BareStatus reading_read(BareReader *r, Reading *out);
 [[nodiscard]] BareStatus reading_write(BareWriter *w, const Reading *value);
 [[nodiscard]] BareStatus reading_decode(Reading *out, const uint8_t buf[], size_t len);
@@ -41,13 +43,15 @@ Reading in = {
     .celsius = 21.5F,
     .location = {.has_value = true, .value = BARE_STR64("greenhouse")},
 };
-uint8_t wire[128];
+uint8_t wire[READING_MAX_SIZE];
 size_t n = 0;
 BARE_TRY(reading_encode(&in, wire, sizeof(wire), &n));
 
 Reading out = {};
 BARE_TRY(reading_decode(&out, wire, n));
-printf("%.1f C at %.*s\n", (double)out.celsius, BARE_STR_ARG(&out.location.value));
+if (out.location.has_value) {
+  printf("%.1f C at %.*s\n", (double)out.celsius, BARE_STR_ARG(&out.location.value));
+}
 ```
 
 `barec check` validates a schema without generating, a `barec.conf`
@@ -74,6 +78,8 @@ copied freely, and outlive the buffer it was decoded from.
   straight into inline fixed-capacity buffers, sized by the config.
 - Anything that doesn't fit fails with `BareStatus_CAP_EXCEEDED`, on
   decode and encode alike. Pick caps for the largest values you expect.
+- Every type gets a wire-size constant for sizing buffers: `X_SIZE`
+  when the encoding has one exact length, `X_MAX_SIZE` otherwise.
 
 `bare.h` ships string-field helpers: `BARE_STR_SET`, `BARE_STR_LIT`,
 `BARE_STR_EQ`, and the `BARE_STR64`/`BARE_STR_ARG` seen above.

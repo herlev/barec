@@ -27,7 +27,11 @@ typedef struct {
   uint8_t data[128];
 } PublicKey;
 
+#define PUBLIC_KEY_SIZE 128
+
 typedef BareStr64 Time;
+
+#define TIME_MAX_SIZE 65
 
 typedef enum : uint8_t {
   Department_ACCOUNTING = 0,
@@ -37,9 +41,13 @@ typedef enum : uint8_t {
   Department_JSMITH = 99,
 } Department;
 
+#define DEPARTMENT_SIZE 1
+
 typedef struct {
   BareStr64 items[4];
 } Address;
+
+#define ADDRESS_MAX_SIZE 260
 
 typedef struct {
   BareStr64 name;
@@ -61,6 +69,8 @@ typedef struct {
   } metadata;
 } Customer;
 
+#define CUSTOMER_MAX_SIZE 1528
+
 typedef struct {
   BareStr64 name;
   BareStr64 email;
@@ -80,6 +90,8 @@ typedef struct {
   } metadata;
 } Employee;
 
+#define EMPLOYEE_MAX_SIZE 1626
+
 typedef enum : uint8_t {
   PersonTag_CUSTOMER = 0,
   PersonTag_EMPLOYEE = 1,
@@ -93,6 +105,8 @@ typedef struct {
     Employee employee;
   } value;
 } Person;
+
+#define PERSON_MAX_SIZE 1627
 
 [[nodiscard]] BareStatus public_key_read(BareReader *r, PublicKey *out);
 [[nodiscard]] BareStatus public_key_write(BareWriter *w, const PublicKey *value);

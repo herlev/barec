@@ -6,6 +6,7 @@
 #include "util/types.h"
 #include "util/vec.h"
 
+#include <assert.h>
 #include <inttypes.h>
 #include <stddef.h>
 #include <stdlib.h>
@@ -188,6 +189,7 @@ static void emit_write_enum_body(const Gen *g, const Type *t) {
   StrBuf *out = g->out;
   strbuf_append(out, "  switch ((uint64_t)*value) {\n");
   for (size_t i = 0; i < t->enum_values.len; i++) {
+    assert(t->enum_values.values[i].value.has_value && "check_schema assigns implicit enum values");
     strbuf_appendf(out, "  case %s:\n", codegen_u64_lit(t->enum_values.values[i].value.value).text);
   }
   strbuf_append(out, "    break;\n  default:\n    return BareStatus_INVALID_ENUM;\n  }\n");
@@ -201,6 +203,7 @@ static void emit_write_union_body(const Gen *g, const Type *t) {
   strbuf_appendf(out, "  switch (value->%s) {\n", g->members.tag);
   for (size_t i = 0; i < t->union_members.len; i++) {
     const UnionMember *m = &t->union_members.members[i];
+    assert(m->tag.has_value && "check_schema assigns implicit union tags");
     char *variant = codegen_render_variant(
         g, tag_cname, (Str){.data = bases->ptr[i], .len = strlen(bases->ptr[i])});
     strbuf_appendf(out, "  case %s:\n", variant);

@@ -5,6 +5,7 @@
 #include "util/optional.h"
 #include "util/types.h"
 
+#include <assert.h>
 #include <stddef.h>
 #include <stdint.h>
 
@@ -45,6 +46,8 @@ static bool union_members_equal(const Type *a, const Type *b) {
   for (size_t i = 0; i < a->union_members.len; i++) {
     const UnionMember *ma = &a->union_members.members[i];
     const UnionMember *mb = &b->union_members.members[i];
+    assert(ma->tag.has_value && mb->tag.has_value &&
+           "members are checked before the duplicate comparison");
     if (ma->tag.value != mb->tag.value || !type_equal(ma->type, mb->type)) {
       return false;
     }

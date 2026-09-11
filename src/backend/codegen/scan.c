@@ -7,6 +7,7 @@
 #include "util/types.h"
 #include "util/vec.h"
 
+#include <assert.h>
 #include <inttypes.h>
 #include <stddef.h>
 #include <stdlib.h>
@@ -97,6 +98,7 @@ static void union_member_bases(const Type *t, VEC(GenName) * out) {
   VEC(GenName) bases = {};
   for (size_t i = 0; i < t->union_members.len; i++) {
     const UnionMember *m = &t->union_members.members[i];
+    assert(m->tag.has_value && "check_schema assigns implicit union tags");
     StrBuf b = {};
     if (m->type->kind == TypeKind_USER) {
       strbuf_append_str(&b, m->type->user.name);

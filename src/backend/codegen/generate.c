@@ -4,6 +4,7 @@
 #include "backend/config.h"
 #include "frontend/schema.h"
 #include "util/diag.h"
+#include "util/macros.h"
 #include "util/strbuf.h"
 #include "util/types.h"
 #include "util/vec.h"
@@ -11,6 +12,7 @@
 #include <assert.h>
 #include <inttypes.h>
 #include <stddef.h>
+#include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -97,6 +99,7 @@ static void emit_header_content(Gen *g, char *const root_names[], const char *ba
     }
     codegen_emit_derived_defs(g, g->schema->types[i].type, true);
     codegen_emit_root_def(g, &g->schema->types[i], root_names[i]);
+    codegen_emit_size_define(g, g->schema->types[i].type, root_names[i]);
   }
   bool first = true;
   for (size_t i = 0; i < g->schema->len; i++) {
@@ -161,7 +164,7 @@ bool codegen_generate(const Schema *schema, const Config *cfg, const char *basen
                       StrBuf *source, Diag *diag) {
   assert(schema->len > 0);
   Gen g = {.schema = schema, .cfg = cfg, .diag = diag, .out = header};
-  g.override_used = calloc(cfg->overrides_len > 0 ? cfg->overrides_len : 1, sizeof(bool));
+  g.override_used = calloc(MAX(cfg->overrides_len, (size_t)1), sizeof(bool));
   if (g.override_used == nullptr) {
     abort();
   }

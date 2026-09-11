@@ -163,8 +163,7 @@ static size_t edit_distance(const char *a, const char *b) {
       diag = d[j];
       size_t del = d[j] + 1;
       size_t ins = d[j - 1] + 1;
-      d[j] = sub < del ? sub : del;
-      d[j] = ins < d[j] ? ins : d[j];
+      d[j] = MIN(MIN(sub, del), ins);
     }
   }
   return d[lb];

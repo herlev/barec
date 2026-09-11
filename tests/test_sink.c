@@ -5,8 +5,11 @@
 #include <stdint.h>
 #include <string.h>
 
+static_assert(BLOB_SIZE == 4);
+static_assert(COUNTS_MAX_SIZE == 100);
+
 static void roundtrip(const Packet *in, Packet *out) {
-  uint8_t buf[1024];
+  uint8_t buf[PACKET_MAX_SIZE];
   size_t written = 0;
   assert(packet_encode(in, buf, sizeof(buf), &written) == BareStatus_OK);
   assert(packet_decode(out, buf, written) == BareStatus_OK);
@@ -105,7 +108,7 @@ static void test_duplicate_keys(void) {
       .choice.tag = PacketChoiceTag_U32,
       .by_mode = {.len = 2, .entries = {{.key = Mode_ON}, {.key = Mode_ON}}},
   };
-  uint8_t buf[1024];
+  uint8_t buf[PACKET_MAX_SIZE];
   size_t written = 0;
   assert(packet_encode(&in, buf, sizeof(buf), &written) == BareStatus_OK);
   Packet out = {};
@@ -137,7 +140,7 @@ static void test_varint_fields(void) {
 
 static void test_counts_vector(void) {
   Counts in = {.items = {0, 1, 254, 255, 256, 257, 126, 127, 128, 129}};
-  uint8_t buf[32];
+  uint8_t buf[COUNTS_MAX_SIZE];
   size_t written = 0;
   assert(counts_encode(&in, buf, sizeof(buf), &written) == BareStatus_OK);
   const uint8_t expected[] = {0x00, 0x01, 0xfe, 0x01, 0xff, 0x01, 0x80, 0x02,
@@ -181,14 +184,14 @@ static void test_anon_data_key_map(void) {
   assert(out.by_key.entries[1].value == 6);
 
   memcpy(in.by_key.entries[1].key, "\x01\x01\x01\x01", 4);
-  uint8_t buf[1024];
+  uint8_t buf[PACKET_MAX_SIZE];
   size_t written = 0;
   assert(packet_encode(&in, buf, sizeof(buf), &written) == BareStatus_OK);
   assert(packet_decode(&out, buf, written) == BareStatus_DUPLICATE_KEY);
 }
 
 static void test_huge_constants(void) {
-  uint8_t buf[32];
+  uint8_t buf[WIDE_MAX_SIZE];
   size_t written = 0;
   Huge h = Huge_BIG;
   assert(huge_encode(&h, buf, sizeof(buf), &written) == BareStatus_OK);

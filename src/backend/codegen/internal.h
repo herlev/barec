@@ -116,6 +116,11 @@ void codegen_emit_derived_defs(const Gen *g, const Type *t, bool is_root);
 
 void codegen_emit_root_def(const Gen *g, const UserType *ut, const char *cname);
 void codegen_emit_shared_typedefs(const Gen *g);
+
+/// Emits the X_SIZE or X_MAX_SIZE define for a root type, computed from
+/// the caps. SIZE when every encoding has the same length, MAX_SIZE
+/// otherwise.
+void codegen_emit_size_define(const Gen *g, const Type *t, const char *cname);
 void codegen_indent(StrBuf *out, int indent);
 
 /// Emit a complete read/write function definition for a named type. Derived

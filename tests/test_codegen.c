@@ -197,7 +197,36 @@ static void test_type_suffix(void) {
   assert(strstr(gen.header.data, "level_t level;") != nullptr);
   assert(strstr(gen.header.data, "level_read(BareReader *r, level_t *out);") != nullptr);
   assert(strstr(gen.header.data, "customer_decode(customer_t *out") != nullptr);
+  assert(strstr(gen.header.data, "#define LEVEL_SIZE 1\n") != nullptr);
   assert(strstr(gen.header.data, "customer_t_") == nullptr);
+  free_generated(&gen);
+}
+
+static void test_size_defines(void) {
+  Config cfg = config_default();
+  Generated gen = generate_ok("type Point struct { x: f32 y: f32 }\n"
+                              "type Blob data[16]\n"
+                              "type Name str\n"
+                              "type Mode enum { OFF ON = 300 }\n"
+                              "type Steady enum { A B }\n"
+                              "type MaybeId optional<u32>\n"
+                              "type Row list<u8>\n"
+                              "type Grid list<u16>[3]\n"
+                              "type Choice union { u8 | u16 }\n"
+                              "type Either union { u8 | i8 }\n"
+                              "type Wrapped Point\n",
+                              &cfg);
+  assert(strstr(gen.header.data, "#define POINT_SIZE 8\n") != nullptr);
+  assert(strstr(gen.header.data, "#define BLOB_SIZE 16\n") != nullptr);
+  assert(strstr(gen.header.data, "#define NAME_MAX_SIZE 65\n") != nullptr);
+  assert(strstr(gen.header.data, "#define MODE_MAX_SIZE 2\n") != nullptr);
+  assert(strstr(gen.header.data, "#define STEADY_SIZE 1\n") != nullptr);
+  assert(strstr(gen.header.data, "#define MAYBE_ID_MAX_SIZE 5\n") != nullptr);
+  assert(strstr(gen.header.data, "#define ROW_MAX_SIZE 9\n") != nullptr);
+  assert(strstr(gen.header.data, "#define GRID_SIZE 6\n") != nullptr);
+  assert(strstr(gen.header.data, "#define CHOICE_MAX_SIZE 3\n") != nullptr);
+  assert(strstr(gen.header.data, "#define EITHER_SIZE 2\n") != nullptr);
+  assert(strstr(gen.header.data, "#define WRAPPED_SIZE 8\n") != nullptr);
   free_generated(&gen);
 }
 
@@ -221,6 +250,7 @@ int main(void) {
   test_union_primitive_members();
   test_screaming_enum_variants();
   test_type_suffix();
+  test_size_defines();
   test_name_collision();
   return 0;
 }
