@@ -435,6 +435,69 @@ fail:
   return true;
 }
 
+static Doc doc_for_line(const TokenList *list, u32 line) {
+  u32 first = line;
+  bool found = true;
+  while (found) {
+    found = false;
+    for (size_t i = 0; i < list->comments_len; i++) {
+      const Comment *c = &list->comments[i];
+      if (c->own_line && c->line == first - 1) {
+        first = c->line;
+        found = true;
+        break;
+      }
+    }
+  }
+  Doc doc = {};
+  VEC(Str) above = {};
+  for (size_t i = 0; i < list->comments_len; i++) {
+    const Comment *c = &list->comments[i];
+    if (c->own_line && c->line >= first && c->line < line) {
+      VEC_PUSH(&above, c->text);
+    } else if (!c->own_line && c->line == line) {
+      doc.trailing = (OPTIONAL(Str)){.has_value = true, .value = c->text};
+    }
+  }
+  doc.above = (SLICE(Str)){.ptr = above.ptr, .len = above.len};
+  return doc;
+}
+
+static void attach_type_docs(Type *type, const TokenList *list) {
+  switch (type->kind) {
+  case TypeKind_ENUM:
+    for (size_t i = 0; i < type->enum_values.len; i++) {
+      EnumValue *value = &type->enum_values.values[i];
+      value->doc = doc_for_line(list, value->loc.line);
+    }
+    break;
+  case TypeKind_STRUCT:
+    for (size_t i = 0; i < type->struct_fields.len; i++) {
+      StructField *field = &type->struct_fields.fields[i];
+      field->doc = doc_for_line(list, field->loc.line);
+      attach_type_docs(field->type, list);
+    }
+    break;
+  case TypeKind_OPTIONAL:
+    attach_type_docs(type->optional.inner, list);
+    break;
+  case TypeKind_LIST:
+    attach_type_docs(type->list.elem, list);
+    break;
+  case TypeKind_MAP:
+    attach_type_docs(type->map.key, list);
+    attach_type_docs(type->map.value, list);
+    break;
+  case TypeKind_UNION:
+    for (size_t i = 0; i < type->union_members.len; i++) {
+      attach_type_docs(type->union_members.members[i].type, list);
+    }
+    break;
+  default:
+    break;
+  }
+}
+
 bool parser_parse(const char *src, size_t len, Schema *out, Diag *diag) {
   TokenList tokens = {};
   if (!lexer_tokenize(src, len, &tokens, diag)) {
@@ -452,6 +515,10 @@ bool parser_parse(const char *src, size_t len, Schema *out, Diag *diag) {
       goto fail;
     }
     VEC_PUSH(&types, user_type);
+  }
+  for (size_t i = 0; i < types.len; i++) {
+    types.ptr[i].doc = doc_for_line(&tokens, types.ptr[i].loc.line);
+    attach_type_docs(types.ptr[i].type, &tokens);
   }
   token_list_free(&tokens);
   *out = (Schema){.types = types.ptr, .len = types.len};

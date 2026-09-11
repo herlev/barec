@@ -19,6 +19,7 @@
 typedef struct {
   Str raw;
   u64 value;
+  Doc doc;
 } EnumEntry;
 
 static const char *const PRIMITIVE_CTYPE[] = {
@@ -42,6 +43,57 @@ U64Lit codegen_u64_lit(u64 value) {
 void codegen_indent(StrBuf *out, int indent) {
   for (int i = 0; i < indent; i++) {
     strbuf_append_char(out, ' ');
+  }
+}
+
+/// A trailing backslash would splice the next generated line into the
+/// comment, so it is stripped along with any whitespace before it.
+static Str doc_text(Str line) {
+  while (line.len > 0 && (line.data[line.len - 1] == '\\' || line.data[line.len - 1] == ' ' ||
+                          line.data[line.len - 1] == '\t')) {
+    line.len -= 1;
+  }
+  return line;
+}
+
+static void emit_doc_line(StrBuf *out, Str line, int indent) {
+  line = doc_text(line);
+  codegen_indent(out, indent);
+  if (line.len == 0) {
+    strbuf_append(out, "///\n");
+  } else {
+    strbuf_appendf(out, "/// %.*s\n", (int)line.len, line.data);
+  }
+}
+
+static void emit_doc_above(StrBuf *out, const Doc *doc, int indent) {
+  for (size_t i = 0; i < doc->above.len; i++) {
+    emit_doc_line(out, doc->above.ptr[i], indent);
+  }
+}
+
+static void emit_doc(StrBuf *out, const Doc *doc, int indent) {
+  emit_doc_above(out, doc, indent);
+  if (doc->trailing.has_value) {
+    emit_doc_line(out, doc->trailing.value, indent);
+  }
+}
+
+/// Appends the trailing comment to the line just emitted, before its
+/// newline. Plain // rather than /// so clangd hover attaches it to that
+/// line's declaration.
+static void emit_trailing_doc(StrBuf *out, const Doc *doc) {
+  if (!doc->trailing.has_value) {
+    return;
+  }
+  assert(out->len > 0 && out->data[out->len - 1] == '\n' &&
+         "member emission ends with its newline");
+  out->len -= 1;
+  Str text = doc_text(doc->trailing.value);
+  if (text.len == 0) {
+    strbuf_append(out, " //\n");
+  } else {
+    strbuf_appendf(out, " // %.*s\n", (int)text.len, text.data);
   }
 }
 
@@ -78,8 +130,10 @@ void codegen_emit_member(const Gen *g, const Type *t, const char *name, const ch
     strbuf_append(out, "struct {\n");
     for (size_t i = 0; i < t->struct_fields.len; i++) {
       const StructField *field = &t->struct_fields.fields[i];
+      emit_doc_above(out, &field->doc, indent + 2);
       char *fname = codegen_render_ident(g->cfg, field->name, g->cfg->field_case, false);
       codegen_emit_member(g, field->type, fname, "", indent + 2);
+      emit_trailing_doc(out, &field->doc);
       free(fname);
     }
     codegen_indent(out, indent);
@@ -195,8 +249,10 @@ static void emit_enum_def(const Gen *g, const char *cname, const EnumEntry entri
   if (g->cfg->std == CStd_C23) {
     strbuf_appendf(out, "typedef enum : %s {\n", base);
     for (size_t i = 0; i < n; i++) {
+      emit_doc_above(out, &entries[i].doc, 2);
       char *variant = codegen_render_variant(g, cname, entries[i].raw);
       strbuf_appendf(out, "  %s = %s,\n", variant, codegen_u64_lit(entries[i].value).text);
+      emit_trailing_doc(out, &entries[i].doc);
       free(variant);
     }
     strbuf_appendf(out, "} %s;\n\n", cname);
@@ -204,16 +260,20 @@ static void emit_enum_def(const Gen *g, const char *cname, const EnumEntry entri
     strbuf_appendf(out, "typedef %s %s;\n", base, cname);
     strbuf_append(out, "enum {\n");
     for (size_t i = 0; i < n; i++) {
+      emit_doc_above(out, &entries[i].doc, 2);
       char *variant = codegen_render_variant(g, cname, entries[i].raw);
       strbuf_appendf(out, "  %s = %" PRIu64 ",\n", variant, entries[i].value);
+      emit_trailing_doc(out, &entries[i].doc);
       free(variant);
     }
     strbuf_append(out, "};\n\n");
   } else {
     strbuf_appendf(out, "typedef %s %s;\n", base, cname);
     for (size_t i = 0; i < n; i++) {
+      emit_doc_above(out, &entries[i].doc, 0);
       char *variant = codegen_render_variant(g, cname, entries[i].raw);
       strbuf_appendf(out, "#define %s UINT64_C(%" PRIu64 ")\n", variant, entries[i].value);
+      emit_trailing_doc(out, &entries[i].doc);
       free(variant);
     }
     strbuf_append(out, "\n");
@@ -231,6 +291,7 @@ static void emit_schema_enum_def(const Gen *g, const Type *t) {
     assert(t->enum_values.values[i].value.has_value && "check_schema assigns implicit enum values");
     entries[i].raw = t->enum_values.values[i].name;
     entries[i].value = t->enum_values.values[i].value.value;
+    entries[i].doc = t->enum_values.values[i].doc;
   }
   emit_enum_def(g, codegen_name_of(g, t), entries, n);
   free(entries);
@@ -241,8 +302,10 @@ static void emit_struct_def(const Gen *g, const Type *t, const char *cname) {
   strbuf_append(out, "typedef struct {\n");
   for (size_t i = 0; i < t->struct_fields.len; i++) {
     const StructField *field = &t->struct_fields.fields[i];
+    emit_doc_above(out, &field->doc, 2);
     char *fname = codegen_render_ident(g->cfg, field->name, g->cfg->field_case, false);
     codegen_emit_member(g, field->type, fname, "", 2);
+    emit_trailing_doc(out, &field->doc);
     free(fname);
   }
   strbuf_appendf(out, "} %s;\n\n", cname);
@@ -262,6 +325,7 @@ static void emit_union_def(const Gen *g, const Type *t) {
     assert(t->union_members.members[i].tag.has_value && "check_schema assigns implicit union tags");
     entries[i].raw = (Str){.data = bases->ptr[i], .len = strlen(bases->ptr[i])};
     entries[i].value = t->union_members.members[i].tag.value;
+    entries[i].doc = (Doc){};
   }
   emit_enum_def(g, tag_cname, entries, n);
   free(entries);
@@ -326,6 +390,7 @@ void codegen_emit_derived_defs(const Gen *g, const Type *t, bool is_root) {
 
 void codegen_emit_root_def(const Gen *g, const UserType *ut, const char *cname) {
   StrBuf *out = g->out;
+  emit_doc(out, &ut->doc, 0);
   const Type *t = ut->type;
   switch (t->kind) {
   case TypeKind_USER: {

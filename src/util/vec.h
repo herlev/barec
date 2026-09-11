@@ -13,6 +13,14 @@
     size_t cap;                                                                                    \
   }
 
+/// A frozen counted array, typically the result of a VEC whose growth is
+/// done. Compatible across identical instantiations like VEC and OPTIONAL.
+#define SLICE(T)                                                                                   \
+  struct Slice_##T {                                                                               \
+    T *ptr;                                                                                        \
+    size_t len;                                                                                    \
+  }
+
 #define VEC_PUSH(vec, item)                                                                        \
   do {                                                                                             \
     if ((vec)->len == (vec)->cap) {                                                                \

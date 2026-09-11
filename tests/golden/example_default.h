@@ -29,6 +29,7 @@ typedef struct {
 
 #define PUBLIC_KEY_SIZE 128
 
+/// ISO 8601
 typedef BareStr64 Time;
 
 #define TIME_MAX_SIZE 65
@@ -38,11 +39,13 @@ typedef enum : uint8_t {
   Department_ADMINISTRATION = 1,
   Department_CUSTOMER_SERVICE = 2,
   Department_DEVELOPMENT = 3,
+  /// Reserved for the CEO
   Department_JSMITH = 99,
 } Department;
 
 #define DEPARTMENT_SIZE 1
 
+/// street, city, state, country
 typedef struct {
   BareStr64 items[4];
 } Address;

@@ -108,6 +108,20 @@ static void test_integer_ident_boundary(void) {
   assert(diag.loc.value.line == 1 && diag.loc.value.column == 12);
 }
 
+static void test_comments(void) {
+  TokenList list = lex_ok("# top\ntype Foo u8 # trailing\n  #   padded   \n");
+  assert(list.comments_len == 3);
+  assert(str_eq(list.comments[0].text, STR("top")));
+  assert(list.comments[0].own_line);
+  assert(list.comments[0].line == 1);
+  assert(str_eq(list.comments[1].text, STR("trailing")));
+  assert(!list.comments[1].own_line);
+  assert(list.comments[1].line == 2);
+  assert(str_eq(list.comments[2].text, STR("  padded")));
+  assert(list.comments[2].own_line);
+  token_list_free(&list);
+}
+
 static void test_locations(void) {
   TokenList list = lex_ok("type Foo\n  u8 # x\ndata");
   assert(list.len == 5);
@@ -155,6 +169,7 @@ int main(void) {
   test_punctuation();
   test_no_space_separation();
   test_integer_ident_boundary();
+  test_comments();
   test_locations();
   test_errors();
   test_example_schema();

@@ -250,6 +250,30 @@ static void test_skip_fns(void) {
   free_generated(&fixed_enum);
 }
 
+static void test_doc_comments(void) {
+  Config cfg = config_default();
+  Generated gen = generate_ok("# A device reading\n"
+                              "type Reading struct {\n"
+                              "  # sensor id\n"
+                              "  device: u32 # unique\n"
+                              "}\n"
+                              "type Mode enum {\n"
+                              "  # the default\n"
+                              "  OFF\n"
+                              "}\n",
+                              &cfg);
+  assert(strstr(gen.header.data, "/// A device reading\ntypedef struct {") != nullptr);
+  assert(strstr(gen.header.data, "  /// sensor id\n  uint32_t device; // unique\n") != nullptr);
+  assert(strstr(gen.header.data, "  /// the default\n  Mode_OFF = 0,") != nullptr);
+  free_generated(&gen);
+
+  Generated sliced = generate_ok("# dangerous \\\ntype Foo u8 # also bad \\\n", &cfg);
+  assert(strstr(sliced.header.data, "/// dangerous\n/// also bad\ntypedef uint8_t Foo;") !=
+         nullptr);
+  assert(strstr(sliced.header.data, "\\") == nullptr);
+  free_generated(&sliced);
+}
+
 static void test_size_defines(void) {
   Config cfg = config_default();
   Generated gen = generate_ok("type Point struct { x: f32 y: f32 }\n"
@@ -301,6 +325,7 @@ int main(void) {
   test_enum_name_fns();
   test_equal_fns();
   test_skip_fns();
+  test_doc_comments();
   test_size_defines();
   test_name_collision();
   return 0;

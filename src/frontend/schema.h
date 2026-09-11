@@ -3,6 +3,7 @@
 #include "util/diag.h"
 #include "util/optional.h"
 #include "util/types.h"
+#include "util/vec.h"
 
 #include <stddef.h>
 
@@ -34,10 +35,19 @@ typedef enum : u8 {
 
 typedef struct Type Type;
 
+/// Comments attached to a declaration: the block on the lines directly
+/// above it and the trailing comment on its line, if any. The lines view
+/// the schema source buffer, the above array is owned.
+typedef struct {
+  SLICE(Str) above;
+  OPTIONAL(Str) trailing;
+} Doc;
+
 typedef struct {
   Str name;
   OPTIONAL(u64) value;
   SrcLoc loc;
+  Doc doc;
 } EnumValue;
 
 typedef struct {
@@ -49,6 +59,7 @@ typedef struct {
   Str name;
   Type *type;
   SrcLoc loc;
+  Doc doc;
 } StructField;
 
 /// The tagged tree for a single BARE type expression. All names are views
@@ -98,6 +109,7 @@ typedef struct {
   Str name;
   Type *type;
   SrcLoc loc;
+  Doc doc;
 } UserType;
 
 typedef struct {

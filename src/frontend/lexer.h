@@ -54,11 +54,23 @@ typedef struct {
   SrcLoc loc;
 } Token;
 
+/// One # comment with the marker and one following space stripped. text
+/// views the source buffer. own_line is false for a comment that follows
+/// other content on its line.
+typedef struct {
+  Str text;
+  u32 line;
+  bool own_line;
+} Comment;
+
 typedef struct {
   Token *tokens;
   size_t len;
+  Comment *comments;
+  size_t comments_len;
 } TokenList;
 
 /// Tokenizes the whole input, ending with a TokenKind_EOF token on success.
+/// Comments are collected in source order instead of being discarded.
 [[nodiscard]] bool lexer_tokenize(const char *src, size_t len, TokenList *out, Diag *diag);
 void token_list_free(TokenList *list);

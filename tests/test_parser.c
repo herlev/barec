@@ -246,9 +246,44 @@ static void test_deep_nesting(void) {
   assert(strstr(diag.message, "nesting") != nullptr);
 }
 
+static void test_docs(void) {
+  Schema schema = parse_ok("# file header\n"
+                           "\n"
+                           "# doc a\n"
+                           "# doc b\n"
+                           "type Foo struct {\n"
+                           "  x: u8 # x doc\n"
+                           "  # y doc\n"
+                           "  y: u8\n"
+                           "}\n"
+                           "type Bar enum {\n"
+                           "  # reserved\n"
+                           "  A = 9\n"
+                           "} # bar doc\n");
+  const UserType *foo = &schema.types[0];
+  assert(foo->doc.above.len == 2);
+  assert(str_eq(foo->doc.above.ptr[0], STR("doc a")));
+  assert(str_eq(foo->doc.above.ptr[1], STR("doc b")));
+  assert(!foo->doc.trailing.has_value);
+  const StructField *fields = foo->type->struct_fields.fields;
+  assert(fields[0].doc.above.len == 0);
+  assert(fields[0].doc.trailing.has_value);
+  assert(str_eq(fields[0].doc.trailing.value, STR("x doc")));
+  assert(fields[1].doc.above.len == 1);
+  assert(str_eq(fields[1].doc.above.ptr[0], STR("y doc")));
+  assert(!fields[1].doc.trailing.has_value);
+  const UserType *bar = &schema.types[1];
+  assert(bar->doc.above.len == 0);
+  assert(!bar->doc.trailing.has_value);
+  assert(bar->type->enum_values.values[0].doc.above.len == 1);
+  assert(str_eq(bar->type->enum_values.values[0].doc.above.ptr[0], STR("reserved")));
+  schema_free(&schema);
+}
+
 int main(void) {
   test_primitives();
   test_data();
+  test_docs();
   test_enum();
   test_optional();
   test_list();

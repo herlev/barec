@@ -16,6 +16,9 @@ void type_free(Type *type) {
   }
   switch (type->kind) {
   case TypeKind_ENUM:
+    for (size_t i = 0; i < type->enum_values.len; i++) {
+      free(type->enum_values.values[i].doc.above.ptr);
+    }
     free(type->enum_values.values);
     break;
   case TypeKind_OPTIONAL:
@@ -37,6 +40,7 @@ void type_free(Type *type) {
   case TypeKind_STRUCT:
     for (size_t i = 0; i < type->struct_fields.len; i++) {
       type_free(type->struct_fields.fields[i].type);
+      free(type->struct_fields.fields[i].doc.above.ptr);
     }
     free(type->struct_fields.fields);
     break;
@@ -49,6 +53,7 @@ void type_free(Type *type) {
 void schema_free(Schema *schema) {
   for (size_t i = 0; i < schema->len; i++) {
     type_free(schema->types[i].type);
+    free(schema->types[i].doc.above.ptr);
   }
   free(schema->types);
   *schema = (Schema){};

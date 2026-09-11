@@ -16,6 +16,8 @@ typedef struct {
   size_t len;
   size_t pos;
   SrcLoc loc;
+  VEC(Comment) comments;
+  u32 last_token_line;
 } Lexer;
 
 static const char *const KEYWORD_NAMES[] = {
@@ -60,15 +62,32 @@ static void advance(Lexer *lx) {
   lx->pos += 1;
 }
 
+static void take_comment(Lexer *lx) {
+  Comment comment = {.line = lx->loc.line, .own_line = lx->loc.line != lx->last_token_line};
+  advance(lx);
+  if (!at_end(lx) && peek(lx) == ' ') {
+    advance(lx);
+  }
+  size_t start = lx->pos;
+  while (!at_end(lx) && peek(lx) != '\n') {
+    advance(lx);
+  }
+  size_t end = lx->pos;
+  while (end > start &&
+         (lx->src[end - 1] == ' ' || lx->src[end - 1] == '\t' || lx->src[end - 1] == '\r')) {
+    end -= 1;
+  }
+  comment.text = (Str){.data = lx->src + start, .len = end - start};
+  VEC_PUSH(&lx->comments, comment);
+}
+
 static void skip_ws_and_comments(Lexer *lx) {
   while (!at_end(lx)) {
     char c = peek(lx);
     if (c == ' ' || c == '\t' || c == '\n') {
       advance(lx);
     } else if (c == '#') {
-      while (!at_end(lx) && peek(lx) != '\n') {
-        advance(lx);
-      }
+      take_comment(lx);
     } else {
       break;
     }
@@ -129,7 +148,9 @@ bool lexer_tokenize(const char *src, size_t len, TokenList *out, Diag *diag) {
     }
     char c = peek(&lx);
     if (ascii_is_alpha(c)) {
-      VEC_PUSH(&vec, lex_ident(&lx));
+      Token token = lex_ident(&lx);
+      lx.last_token_line = token.loc.line;
+      VEC_PUSH(&vec, token);
       continue;
     }
     if (ascii_is_digit(c)) {
@@ -137,6 +158,7 @@ bool lexer_tokenize(const char *src, size_t len, TokenList *out, Diag *diag) {
       if (!lex_integer(&lx, &token, diag)) {
         goto fail;
       }
+      lx.last_token_line = token.loc.line;
       VEC_PUSH(&vec, token);
       continue;
     }
@@ -182,17 +204,23 @@ bool lexer_tokenize(const char *src, size_t len, TokenList *out, Diag *diag) {
     }
     Token token = {.kind = kind, .text = {.data = lx.src + lx.pos, .len = 1}, .loc = lx.loc};
     advance(&lx);
+    lx.last_token_line = token.loc.line;
     VEC_PUSH(&vec, token);
   }
-  *out = (TokenList){.tokens = vec.ptr, .len = vec.len};
+  *out = (TokenList){.tokens = vec.ptr,
+                     .len = vec.len,
+                     .comments = lx.comments.ptr,
+                     .comments_len = lx.comments.len};
   return true;
 
 fail:
   free(vec.ptr);
+  free(lx.comments.ptr);
   return false;
 }
 
 void token_list_free(TokenList *list) {
   free(list->tokens);
+  free(list->comments);
   *list = (TokenList){};
 }
