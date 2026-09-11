@@ -80,6 +80,7 @@ typedef struct {
 [[nodiscard]] BareStatus colorWrite(BareWriter *w, const Color *value);
 [[nodiscard]] BareStatus colorDecode(Color *out, const uint8_t buf[], size_t len);
 [[nodiscard]] BareStatus colorEncode(const Color *value, uint8_t buf[], size_t cap, size_t *written);
+const char *colorName(Color value);
 
 [[nodiscard]] BareStatus profileRead(BareReader *r, Profile *out);
 [[nodiscard]] BareStatus profileWrite(BareWriter *w, const Profile *value);

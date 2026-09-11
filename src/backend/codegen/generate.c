@@ -110,6 +110,11 @@ static void emit_header_content(Gen *g, char *const root_names[], const char *ba
       strbuf_append(out, "\n");
     }
     emit_function_decls(g, root_names[i]);
+    if (g->schema->types[i].type->kind == TypeKind_ENUM) {
+      char *fn_name = codegen_type_fn_name(g, root_names[i], "name");
+      strbuf_appendf(out, "const char *%s(%s value);\n", fn_name, root_names[i]);
+      free(fn_name);
+    }
     first = false;
   }
 }

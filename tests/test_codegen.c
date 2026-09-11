@@ -202,6 +202,22 @@ static void test_type_suffix(void) {
   free_generated(&gen);
 }
 
+static void test_enum_name_fns(void) {
+  Config cfg = config_default();
+  cfg.prefix = STR("acme");
+  Generated gen = generate_ok("type Mode enum { OFF ON = 10 TURBO = 300 }\n"
+                              "type Alias Mode\n"
+                              "type Holder struct { kind: enum { A B } }\n",
+                              &cfg);
+  assert(strstr(gen.header.data, "const char *acme_mode_name(AcmeMode value);") != nullptr);
+  assert(strstr(gen.source.data, "const char *acme_mode_name(AcmeMode value) {") != nullptr);
+  assert(strstr(gen.source.data, "  case AcmeMode_TURBO:\n    return \"TURBO\";\n") != nullptr);
+  assert(strstr(gen.source.data, "  }\n  return NULL;\n}") != nullptr);
+  assert(strstr(gen.header.data, "acme_alias_name") == nullptr);
+  assert(strstr(gen.header.data, "acme_holder_kind_name") == nullptr);
+  free_generated(&gen);
+}
+
 static void test_size_defines(void) {
   Config cfg = config_default();
   Generated gen = generate_ok("type Point struct { x: f32 y: f32 }\n"
@@ -250,6 +266,7 @@ int main(void) {
   test_union_primitive_members();
   test_screaming_enum_variants();
   test_type_suffix();
+  test_enum_name_fns();
   test_size_defines();
   test_name_collision();
   return 0;

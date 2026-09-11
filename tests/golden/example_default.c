@@ -105,6 +105,22 @@ BareStatus department_encode(const Department *value, uint8_t buf[], size_t cap,
   return BareStatus_OK;
 }
 
+const char *department_name(Department value) {
+  switch (value) {
+  case Department_ACCOUNTING:
+    return "ACCOUNTING";
+  case Department_ADMINISTRATION:
+    return "ADMINISTRATION";
+  case Department_CUSTOMER_SERVICE:
+    return "CUSTOMER_SERVICE";
+  case Department_DEVELOPMENT:
+    return "DEVELOPMENT";
+  case Department_JSMITH:
+    return "JSMITH";
+  }
+  return NULL;
+}
+
 BareStatus address_read(BareReader *r, Address *out) {
   for (uint64_t i0 = 0; i0 < 4; i0++) {
     BARE_TRY(bare_read_str(r, out->items[i0].data, 64, &out->items[i0].len));

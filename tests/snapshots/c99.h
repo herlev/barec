@@ -83,6 +83,7 @@ BARE_NODISCARD BareStatus color_read(BareReader *r, Color *out);
 BARE_NODISCARD BareStatus color_write(BareWriter *w, const Color *value);
 BARE_NODISCARD BareStatus color_decode(Color *out, const uint8_t buf[], size_t len);
 BARE_NODISCARD BareStatus color_encode(const Color *value, uint8_t buf[], size_t cap, size_t *written);
+const char *color_name(Color value);
 
 BARE_NODISCARD BareStatus profile_read(BareReader *r, Profile *out);
 BARE_NODISCARD BareStatus profile_write(BareWriter *w, const Profile *value);

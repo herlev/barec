@@ -80,6 +80,7 @@ typedef struct {
 [[nodiscard]] BareStatus acme_color_write(BareWriter *w, const AcmeColor *value);
 [[nodiscard]] BareStatus acme_color_decode(AcmeColor *out, const uint8_t buf[], size_t len);
 [[nodiscard]] BareStatus acme_color_encode(const AcmeColor *value, uint8_t buf[], size_t cap, size_t *written);
+const char *acme_color_name(AcmeColor value);
 
 [[nodiscard]] BareStatus acme_profile_read(BareReader *r, AcmeProfile *out);
 [[nodiscard]] BareStatus acme_profile_write(BareWriter *w, const AcmeProfile *value);

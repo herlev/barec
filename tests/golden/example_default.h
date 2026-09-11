@@ -122,6 +122,7 @@ typedef struct {
 [[nodiscard]] BareStatus department_write(BareWriter *w, const Department *value);
 [[nodiscard]] BareStatus department_decode(Department *out, const uint8_t buf[], size_t len);
 [[nodiscard]] BareStatus department_encode(const Department *value, uint8_t buf[], size_t cap, size_t *written);
+const char *department_name(Department value);
 
 [[nodiscard]] BareStatus address_read(BareReader *r, Address *out);
 [[nodiscard]] BareStatus address_write(BareWriter *w, const Address *value);

@@ -76,6 +76,22 @@ static void emit_encode_fn(const Gen *g, const char *cname) {
   free(fn_write);
 }
 
+static void emit_enum_name_fn(const Gen *g, const Type *t, const char *cname) {
+  StrBuf *out = g->out;
+  char *fn_name = codegen_type_fn_name(g, cname, "name");
+  strbuf_appendf(out, "const char *%s(%s value) {\n", fn_name, cname);
+  strbuf_append(out, "  switch (value) {\n");
+  for (size_t i = 0; i < t->enum_values.len; i++) {
+    const EnumValue *v = &t->enum_values.values[i];
+    char *variant = codegen_render_variant(g, cname, v->name);
+    strbuf_appendf(out, "  case %s:\n    return \"%.*s\";\n", variant, (int)v->name.len,
+                   v->name.data);
+    free(variant);
+  }
+  strbuf_append(out, "  }\n  return NULL;\n}\n\n");
+  free(fn_name);
+}
+
 void codegen_emit_source_content(const Gen *g, char *const root_names[], const char *basename) {
   assert(root_names != nullptr);
   StrBuf *out = g->out;
@@ -92,6 +108,9 @@ void codegen_emit_source_content(const Gen *g, char *const root_names[], const c
     codegen_emit_write_fn(g, ut->type, root_names[i], true);
     emit_decode_fn(g, root_names[i]);
     emit_encode_fn(g, root_names[i]);
+    if (ut->type->kind == TypeKind_ENUM) {
+      emit_enum_name_fn(g, ut->type, root_names[i]);
+    }
   }
   if (out->len >= 2 && out->data[out->len - 1] == '\n' && out->data[out->len - 2] == '\n') {
     out->len -= 1;

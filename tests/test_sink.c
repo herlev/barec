@@ -190,6 +190,16 @@ static void test_anon_data_key_map(void) {
   assert(packet_decode(&out, buf, written) == BareStatus_DUPLICATE_KEY);
 }
 
+static void test_enum_names(void) {
+  assert(strcmp(mode_name(Mode_OFF), "OFF") == 0);
+  assert(strcmp(mode_name(Mode_TURBO), "TURBO") == 0);
+  Mode bogus;
+  const uint16_t raw = 7;
+  memcpy(&bogus, &raw, sizeof(bogus));
+  assert(mode_name(bogus) == NULL);
+  assert(strcmp(huge_name(Huge_BIG), "BIG") == 0);
+}
+
 static void test_huge_constants(void) {
   uint8_t buf[WIDE_MAX_SIZE];
   size_t written = 0;
@@ -217,6 +227,7 @@ int main(void) {
   test_invalid_optional_marker();
   test_decode_cap_exceeded();
   test_anon_data_key_map();
+  test_enum_names();
   test_huge_constants();
   return 0;
 }
