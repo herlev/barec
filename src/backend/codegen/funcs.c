@@ -27,12 +27,12 @@ static void emit_derived_fns(const Gen *g, const Type *t, bool is_root) {
     break;
   case TypeKind_STRUCT:
     for (size_t i = 0; i < t->struct_fields.len; i++) {
-      emit_derived_fns(g, t->struct_fields.fields[i].type, false);
+      emit_derived_fns(g, t->struct_fields.ptr[i].type, false);
     }
     break;
   case TypeKind_UNION:
     for (size_t i = 0; i < t->union_members.len; i++) {
-      emit_derived_fns(g, t->union_members.members[i].type, false);
+      emit_derived_fns(g, t->union_members.ptr[i].type, false);
     }
     if (!is_root) {
       codegen_emit_read_fn(g, t, codegen_name_of(g, t), false);
@@ -84,7 +84,7 @@ static void emit_enum_name_fn(const Gen *g, const Type *t, const char *cname) {
   strbuf_appendf(out, "const char *%s(%s value) {\n", fn_name, cname);
   strbuf_append(out, "  switch (value) {\n");
   for (size_t i = 0; i < t->enum_values.len; i++) {
-    const EnumValue *v = &t->enum_values.values[i];
+    const EnumValue *v = &t->enum_values.ptr[i];
     char *variant = codegen_render_variant(g, cname, v->name);
     strbuf_appendf(out, "  case %s:\n    return \"%.*s\";\n", variant, (int)v->name.len,
                    v->name.data);
@@ -104,7 +104,7 @@ void codegen_emit_source_content(const Gen *g, char *const root_names[], const c
     if (root_names[i] == nullptr) {
       continue;
     }
-    const UserType *ut = &g->schema->types[i];
+    const UserType *ut = &g->schema->ptr[i];
     emit_derived_fns(g, ut->type, true);
     codegen_emit_read_fn(g, ut->type, root_names[i], true);
     codegen_emit_write_fn(g, ut->type, root_names[i], true);

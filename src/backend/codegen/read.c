@@ -194,7 +194,7 @@ static void emit_read_step(const Gen *g, const Type *t, const char *expr, int in
     break;
   case TypeKind_STRUCT:
     for (size_t i = 0; i < t->struct_fields.len; i++) {
-      const StructField *field = &t->struct_fields.fields[i];
+      const StructField *field = &t->struct_fields.ptr[i];
       char *fname = codegen_render_ident(g->cfg, field->name, g->cfg->field_case, false);
       StrBuf fexpr = {};
       strbuf_appendf(&fexpr, "%s.%s", expr, fname);
@@ -251,8 +251,8 @@ static void emit_read_enum_body(const Gen *g, const Type *t, const char *cname) 
   StrBuf *out = g->out;
   strbuf_append(out, "  uint64_t raw;\n  BARE_TRY(bare_read_uint(r, &raw));\n  switch (raw) {\n");
   for (size_t i = 0; i < t->enum_values.len; i++) {
-    assert(t->enum_values.values[i].value.has_value && "check_schema assigns implicit enum values");
-    strbuf_appendf(out, "  case %s:\n", codegen_u64_lit(t->enum_values.values[i].value.value).text);
+    assert(t->enum_values.ptr[i].value.has_value && "check_schema assigns implicit enum values");
+    strbuf_appendf(out, "  case %s:\n", codegen_u64_lit(t->enum_values.ptr[i].value.value).text);
   }
   strbuf_append(out, "    break;\n  default:\n    return BareStatus_INVALID_ENUM;\n  }\n");
   strbuf_appendf(out, "  *out = (%s)raw;\n  return BareStatus_OK;\n", cname);
@@ -264,7 +264,7 @@ static void emit_read_union_body(const Gen *g, const Type *t) {
   const VEC(GenName) *bases = codegen_bases_of(g, t);
   strbuf_append(out, "  uint64_t tag;\n  BARE_TRY(bare_read_uint(r, &tag));\n  switch (tag) {\n");
   for (size_t i = 0; i < t->union_members.len; i++) {
-    const UnionMember *m = &t->union_members.members[i];
+    const UnionMember *m = &t->union_members.ptr[i];
     assert(m->tag.has_value && "check_schema assigns implicit union tags");
     char *variant = codegen_render_variant(
         g, tag_cname, (Str){.data = bases->ptr[i], .len = strlen(bases->ptr[i])});
@@ -314,7 +314,7 @@ static void emit_read_body(const Gen *g, const Type *t, const char *cname) {
     break;
   case TypeKind_STRUCT:
     for (size_t i = 0; i < t->struct_fields.len; i++) {
-      const StructField *field = &t->struct_fields.fields[i];
+      const StructField *field = &t->struct_fields.ptr[i];
       char *fname = codegen_render_ident(g->cfg, field->name, g->cfg->field_case, false);
       StrBuf expr = {};
       strbuf_appendf(&expr, "out->%s", fname);

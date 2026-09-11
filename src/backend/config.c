@@ -326,8 +326,7 @@ bool config_load_text(Config *cfg, const char *text, size_t len, Diag *diag) {
     free(owned);
     return false;
   }
-  ld.cfg.overrides = ld.overrides.ptr;
-  ld.cfg.overrides_len = ld.overrides.len;
+  ld.cfg.overrides = (SLICE(CapOverride)){.ptr = ld.overrides.ptr, .len = ld.overrides.len};
   ld.cfg.source_text = owned;
   *cfg = ld.cfg;
   return true;
@@ -361,7 +360,7 @@ Config config_default(void) {
 }
 
 void config_free(Config *cfg) {
-  free(cfg->overrides);
+  free(cfg->overrides.ptr);
   free(cfg->source_text);
   *cfg = (Config){};
 }

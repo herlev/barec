@@ -2,6 +2,7 @@
 
 #include "util/diag.h"
 #include "util/types.h"
+#include "util/vec.h"
 
 #include <stddef.h>
 
@@ -64,10 +65,8 @@ typedef struct {
 } Comment;
 
 typedef struct {
-  Token *tokens;
-  size_t len;
-  Comment *comments;
-  size_t comments_len;
+  SLICE(Token) tokens;
+  SLICE(Comment) comments;
 } TokenList;
 
 /// Tokenizes the whole input, ending with a TokenKind_EOF token on success.

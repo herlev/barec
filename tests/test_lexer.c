@@ -23,16 +23,16 @@ static Diag lex_fail(const char *src) {
 
 static void test_empty(void) {
   TokenList list = lex_ok("");
-  assert(list.len == 1);
-  assert(list.tokens[0].kind == TokenKind_EOF);
+  assert(list.tokens.len == 1);
+  assert(list.tokens.ptr[0].kind == TokenKind_EOF);
   token_list_free(&list);
 }
 
 static void test_ws_and_comments(void) {
   TokenList list = lex_ok(" \t\n# comment <>{} 123\n# comment at eof");
-  assert(list.len == 1);
-  assert(list.tokens[0].kind == TokenKind_EOF);
-  assert(list.tokens[0].loc.line == 3);
+  assert(list.tokens.len == 1);
+  assert(list.tokens.ptr[0].kind == TokenKind_EOF);
+  assert(list.tokens.ptr[0].loc.line == 3);
   token_list_free(&list);
 }
 
@@ -40,38 +40,38 @@ static void test_keywords(void) {
   TokenList list = lex_ok("type uint u8 u16 u32 u64 int i8 i16 i32 i64 "
                           "f32 f64 bool str data void enum optional list map union struct");
   size_t keyword_count = TokenKind_IDENT - TokenKind_KW_TYPE;
-  assert(list.len == keyword_count + 1);
+  assert(list.tokens.len == keyword_count + 1);
   for (size_t i = 0; i < keyword_count; i++) {
-    assert(list.tokens[i].kind == (TokenKind)(TokenKind_KW_TYPE + i));
+    assert(list.tokens.ptr[i].kind == (TokenKind)(TokenKind_KW_TYPE + i));
   }
-  assert(list.tokens[keyword_count].kind == TokenKind_EOF);
+  assert(list.tokens.ptr[keyword_count].kind == TokenKind_EOF);
   token_list_free(&list);
 }
 
 static void test_identifiers(void) {
   TokenList list = lex_ok("PublicKey FOO_BAR fooBar f32x u8_ orderId");
-  assert(list.len == 7);
+  assert(list.tokens.len == 7);
   for (size_t i = 0; i < 6; i++) {
-    assert(list.tokens[i].kind == TokenKind_IDENT);
+    assert(list.tokens.ptr[i].kind == TokenKind_IDENT);
   }
-  assert(str_eq(list.tokens[0].text, STR("PublicKey")));
-  assert(str_eq(list.tokens[1].text, STR("FOO_BAR")));
-  assert(str_eq(list.tokens[3].text, STR("f32x")));
-  assert(str_eq(list.tokens[4].text, STR("u8_")));
+  assert(str_eq(list.tokens.ptr[0].text, STR("PublicKey")));
+  assert(str_eq(list.tokens.ptr[1].text, STR("FOO_BAR")));
+  assert(str_eq(list.tokens.ptr[3].text, STR("f32x")));
+  assert(str_eq(list.tokens.ptr[4].text, STR("u8_")));
   token_list_free(&list);
 }
 
 static void test_integers(void) {
   TokenList list = lex_ok("0 127 007 18446744073709551615");
-  assert(list.len == 5);
+  assert(list.tokens.len == 5);
   for (size_t i = 0; i < 4; i++) {
-    assert(list.tokens[i].kind == TokenKind_INTEGER);
+    assert(list.tokens.ptr[i].kind == TokenKind_INTEGER);
   }
-  assert(list.tokens[0].integer == 0);
-  assert(list.tokens[1].integer == 127);
-  assert(list.tokens[2].integer == 7);
-  assert(list.tokens[3].integer == UINT64_MAX);
-  assert(str_eq(list.tokens[3].text, STR("18446744073709551615")));
+  assert(list.tokens.ptr[0].integer == 0);
+  assert(list.tokens.ptr[1].integer == 127);
+  assert(list.tokens.ptr[2].integer == 7);
+  assert(list.tokens.ptr[3].integer == UINT64_MAX);
+  assert(str_eq(list.tokens.ptr[3].text, STR("18446744073709551615")));
   token_list_free(&list);
 }
 
@@ -80,9 +80,9 @@ static void test_punctuation(void) {
   TokenKind expected[] = {
       TokenKind_LBRACE,   TokenKind_RBRACE, TokenKind_LANGLE, TokenKind_RANGLE, TokenKind_LBRACKET,
       TokenKind_RBRACKET, TokenKind_COLON,  TokenKind_PIPE,   TokenKind_EQUALS, TokenKind_EOF};
-  assert(list.len == ARRAY_LEN(expected));
+  assert(list.tokens.len == ARRAY_LEN(expected));
   for (size_t i = 0; i < ARRAY_LEN(expected); i++) {
-    assert(list.tokens[i].kind == expected[i]);
+    assert(list.tokens.ptr[i].kind == expected[i]);
   }
   token_list_free(&list);
 }
@@ -92,11 +92,11 @@ static void test_no_space_separation(void) {
   TokenKind expected[] = {TokenKind_KW_LIST,  TokenKind_LANGLE,   TokenKind_KW_STR,
                           TokenKind_RANGLE,   TokenKind_LBRACKET, TokenKind_INTEGER,
                           TokenKind_RBRACKET, TokenKind_EOF};
-  assert(list.len == ARRAY_LEN(expected));
+  assert(list.tokens.len == ARRAY_LEN(expected));
   for (size_t i = 0; i < ARRAY_LEN(expected); i++) {
-    assert(list.tokens[i].kind == expected[i]);
+    assert(list.tokens.ptr[i].kind == expected[i]);
   }
-  assert(list.tokens[5].integer == 4);
+  assert(list.tokens.ptr[5].integer == 4);
   token_list_free(&list);
 }
 
@@ -110,27 +110,27 @@ static void test_integer_ident_boundary(void) {
 
 static void test_comments(void) {
   TokenList list = lex_ok("# top\ntype Foo u8 # trailing\n  #   padded   \n");
-  assert(list.comments_len == 3);
-  assert(str_eq(list.comments[0].text, STR("top")));
-  assert(list.comments[0].own_line);
-  assert(list.comments[0].line == 1);
-  assert(str_eq(list.comments[1].text, STR("trailing")));
-  assert(!list.comments[1].own_line);
-  assert(list.comments[1].line == 2);
-  assert(str_eq(list.comments[2].text, STR("  padded")));
-  assert(list.comments[2].own_line);
+  assert(list.comments.len == 3);
+  assert(str_eq(list.comments.ptr[0].text, STR("top")));
+  assert(list.comments.ptr[0].own_line);
+  assert(list.comments.ptr[0].line == 1);
+  assert(str_eq(list.comments.ptr[1].text, STR("trailing")));
+  assert(!list.comments.ptr[1].own_line);
+  assert(list.comments.ptr[1].line == 2);
+  assert(str_eq(list.comments.ptr[2].text, STR("  padded")));
+  assert(list.comments.ptr[2].own_line);
   token_list_free(&list);
 }
 
 static void test_locations(void) {
   TokenList list = lex_ok("type Foo\n  u8 # x\ndata");
-  assert(list.len == 5);
-  assert(list.tokens[0].loc.line == 1 && list.tokens[0].loc.column == 1);
-  assert(list.tokens[1].loc.line == 1 && list.tokens[1].loc.column == 6);
-  assert(list.tokens[2].loc.line == 2 && list.tokens[2].loc.column == 3);
-  assert(list.tokens[3].loc.line == 3 && list.tokens[3].loc.column == 1);
-  assert(list.tokens[4].kind == TokenKind_EOF);
-  assert(list.tokens[4].loc.line == 3 && list.tokens[4].loc.column == 5);
+  assert(list.tokens.len == 5);
+  assert(list.tokens.ptr[0].loc.line == 1 && list.tokens.ptr[0].loc.column == 1);
+  assert(list.tokens.ptr[1].loc.line == 1 && list.tokens.ptr[1].loc.column == 6);
+  assert(list.tokens.ptr[2].loc.line == 2 && list.tokens.ptr[2].loc.column == 3);
+  assert(list.tokens.ptr[3].loc.line == 3 && list.tokens.ptr[3].loc.column == 1);
+  assert(list.tokens.ptr[4].kind == TokenKind_EOF);
+  assert(list.tokens.ptr[4].loc.line == 3 && list.tokens.ptr[4].loc.column == 5);
   token_list_free(&list);
 }
 
@@ -154,9 +154,9 @@ static const char EXAMPLE_SCHEMA[] = {
 
 static void test_example_schema(void) {
   TokenList list = lex_ok(EXAMPLE_SCHEMA);
-  assert(list.len > 50);
-  assert(list.tokens[0].kind == TokenKind_KW_TYPE);
-  assert(list.tokens[list.len - 1].kind == TokenKind_EOF);
+  assert(list.tokens.len > 50);
+  assert(list.tokens.ptr[0].kind == TokenKind_KW_TYPE);
+  assert(list.tokens.ptr[list.tokens.len - 1].kind == TokenKind_EOF);
   token_list_free(&list);
 }
 

@@ -187,7 +187,7 @@ static Type *type_new(Type type) {
     VEC_PUSH(&values, value);
   }
   Type *node = type_new((Type){.kind = TypeKind_ENUM, .loc = loc});
-  node->enum_values.values = values.ptr;
+  node->enum_values.ptr = values.ptr;
   node->enum_values.len = values.len;
   *out = node;
   return true;
@@ -244,7 +244,7 @@ fail:
     goto fail;
   }
   Type *node = type_new((Type){.kind = TypeKind_UNION, .loc = loc});
-  node->union_members.members = members.ptr;
+  node->union_members.ptr = members.ptr;
   node->union_members.len = members.len;
   *out = node;
   return true;
@@ -295,7 +295,7 @@ fail:
     VEC_PUSH(&fields, field);
   }
   Type *node = type_new((Type){.kind = TypeKind_STRUCT, .loc = loc});
-  node->struct_fields.fields = fields.ptr;
+  node->struct_fields.ptr = fields.ptr;
   node->struct_fields.len = fields.len;
   *out = node;
   return true;
@@ -440,8 +440,8 @@ static Doc doc_for_line(const TokenList *list, u32 line) {
   bool found = true;
   while (found) {
     found = false;
-    for (size_t i = 0; i < list->comments_len; i++) {
-      const Comment *c = &list->comments[i];
+    for (size_t i = 0; i < list->comments.len; i++) {
+      const Comment *c = &list->comments.ptr[i];
       if (c->own_line && c->line == first - 1) {
         first = c->line;
         found = true;
@@ -451,8 +451,8 @@ static Doc doc_for_line(const TokenList *list, u32 line) {
   }
   Doc doc = {};
   VEC(Str) above = {};
-  for (size_t i = 0; i < list->comments_len; i++) {
-    const Comment *c = &list->comments[i];
+  for (size_t i = 0; i < list->comments.len; i++) {
+    const Comment *c = &list->comments.ptr[i];
     if (c->own_line && c->line >= first && c->line < line) {
       VEC_PUSH(&above, c->text);
     } else if (!c->own_line && c->line == line) {
@@ -467,13 +467,13 @@ static void attach_type_docs(Type *type, const TokenList *list) {
   switch (type->kind) {
   case TypeKind_ENUM:
     for (size_t i = 0; i < type->enum_values.len; i++) {
-      EnumValue *value = &type->enum_values.values[i];
+      EnumValue *value = &type->enum_values.ptr[i];
       value->doc = doc_for_line(list, value->loc.line);
     }
     break;
   case TypeKind_STRUCT:
     for (size_t i = 0; i < type->struct_fields.len; i++) {
-      StructField *field = &type->struct_fields.fields[i];
+      StructField *field = &type->struct_fields.ptr[i];
       field->doc = doc_for_line(list, field->loc.line);
       attach_type_docs(field->type, list);
     }
@@ -490,7 +490,7 @@ static void attach_type_docs(Type *type, const TokenList *list) {
     break;
   case TypeKind_UNION:
     for (size_t i = 0; i < type->union_members.len; i++) {
-      attach_type_docs(type->union_members.members[i].type, list);
+      attach_type_docs(type->union_members.ptr[i].type, list);
     }
     break;
   default:
@@ -503,7 +503,7 @@ bool parser_parse(const char *src, size_t len, Schema *out, Diag *diag) {
   if (!lexer_tokenize(src, len, &tokens, diag)) {
     return false;
   }
-  Parser p = {.tokens = tokens.tokens, .diag = diag};
+  Parser p = {.tokens = tokens.tokens.ptr, .diag = diag};
   VEC(UserType) types = {};
   if (peek(&p)->kind == TokenKind_EOF) {
     diag_set(diag, peek(&p)->loc, "schema must define at least one type");
@@ -521,7 +521,7 @@ bool parser_parse(const char *src, size_t len, Schema *out, Diag *diag) {
     attach_type_docs(types.ptr[i].type, &tokens);
   }
   token_list_free(&tokens);
-  *out = (Schema){.types = types.ptr, .len = types.len};
+  *out = (Schema){.ptr = types.ptr, .len = types.len};
   return true;
 
 fail:

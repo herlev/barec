@@ -2,6 +2,7 @@
 
 #include "util/diag.h"
 #include "util/types.h"
+#include "util/vec.h"
 
 #include <stddef.h>
 
@@ -46,8 +47,7 @@ typedef struct {
   u32 data_cap;
   u32 list_cap;
   u32 map_cap;
-  CapOverride *overrides;
-  size_t overrides_len;
+  SLICE(CapOverride) overrides;
   char *source_text;
 } Config;
 

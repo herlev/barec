@@ -3,6 +3,7 @@
 #include "util/ascii.h"
 #include "util/diag.h"
 #include "util/macros.h"
+#include "util/optional.h"
 #include "util/types.h"
 #include "util/vec.h"
 
@@ -17,7 +18,7 @@ typedef struct {
   size_t pos;
   SrcLoc loc;
   VEC(Comment) comments;
-  u32 last_token_line;
+  OPTIONAL(u32) last_token_line;
 } Lexer;
 
 static const char *const KEYWORD_NAMES[] = {
@@ -63,7 +64,9 @@ static void advance(Lexer *lx) {
 }
 
 static void take_comment(Lexer *lx) {
-  Comment comment = {.line = lx->loc.line, .own_line = lx->loc.line != lx->last_token_line};
+  Comment comment = {.line = lx->loc.line,
+                     .own_line = (bool)(!lx->last_token_line.has_value ||
+                                        lx->loc.line != lx->last_token_line.value)};
   advance(lx);
   if (!at_end(lx) && peek(lx) == ' ') {
     advance(lx);
@@ -149,7 +152,7 @@ bool lexer_tokenize(const char *src, size_t len, TokenList *out, Diag *diag) {
     char c = peek(&lx);
     if (ascii_is_alpha(c)) {
       Token token = lex_ident(&lx);
-      lx.last_token_line = token.loc.line;
+      lx.last_token_line = (OPTIONAL(u32)){.has_value = true, .value = token.loc.line};
       VEC_PUSH(&vec, token);
       continue;
     }
@@ -158,7 +161,7 @@ bool lexer_tokenize(const char *src, size_t len, TokenList *out, Diag *diag) {
       if (!lex_integer(&lx, &token, diag)) {
         goto fail;
       }
-      lx.last_token_line = token.loc.line;
+      lx.last_token_line = (OPTIONAL(u32)){.has_value = true, .value = token.loc.line};
       VEC_PUSH(&vec, token);
       continue;
     }
@@ -204,13 +207,11 @@ bool lexer_tokenize(const char *src, size_t len, TokenList *out, Diag *diag) {
     }
     Token token = {.kind = kind, .text = {.data = lx.src + lx.pos, .len = 1}, .loc = lx.loc};
     advance(&lx);
-    lx.last_token_line = token.loc.line;
+    lx.last_token_line = (OPTIONAL(u32)){.has_value = true, .value = token.loc.line};
     VEC_PUSH(&vec, token);
   }
-  *out = (TokenList){.tokens = vec.ptr,
-                     .len = vec.len,
-                     .comments = lx.comments.ptr,
-                     .comments_len = lx.comments.len};
+  *out = (TokenList){.tokens = {.ptr = vec.ptr, .len = vec.len},
+                     .comments = {.ptr = lx.comments.ptr, .len = lx.comments.len}};
   return true;
 
 fail:
@@ -220,7 +221,7 @@ fail:
 }
 
 void token_list_free(TokenList *list) {
-  free(list->tokens);
-  free(list->comments);
+  free(list->tokens.ptr);
+  free(list->comments.ptr);
   *list = (TokenList){};
 }

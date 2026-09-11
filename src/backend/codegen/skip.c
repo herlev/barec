@@ -35,7 +35,7 @@ static bool skip_is_fixed(const Type *t) {
     return (bool)(t->list.length.has_value && skip_is_fixed(t->list.elem));
   case TypeKind_STRUCT:
     for (size_t i = 0; i < t->struct_fields.len; i++) {
-      if (!skip_is_fixed(t->struct_fields.fields[i].type)) {
+      if (!skip_is_fixed(t->struct_fields.ptr[i].type)) {
         return false;
       }
     }
@@ -136,7 +136,7 @@ static void emit_skip_step(const Gen *g, const Type *t, int indent, int depth) {
     break;
   case TypeKind_STRUCT:
     for (size_t i = 0; i < t->struct_fields.len; i++) {
-      emit_skip_step(g, t->struct_fields.fields[i].type, indent, depth);
+      emit_skip_step(g, t->struct_fields.ptr[i].type, indent, depth);
     }
     break;
   case TypeKind_LIST:
@@ -177,7 +177,7 @@ static void emit_union_skip_body(const Gen *g, const Type *t) {
   StrBuf *out = g->out;
   strbuf_append(out, "  uint64_t tag;\n  BARE_TRY(bare_read_uint(r, &tag));\n  switch (tag) {\n");
   for (size_t i = 0; i < t->union_members.len; i++) {
-    const UnionMember *m = &t->union_members.members[i];
+    const UnionMember *m = &t->union_members.ptr[i];
     assert(m->tag.has_value && "check_schema assigns implicit union tags");
     strbuf_appendf(out, "  case %s:\n", codegen_u64_lit(m->tag.value).text);
     emit_skip_step(g, m->type, 4, 0);

@@ -29,8 +29,8 @@ static Diag check_fail(const char *src) {
 
 static void test_resolution(void) {
   Schema schema = check_ok("type A u8 type B A type C optional<B>");
-  assert(schema.types[1].type->user.resolved == schema.types[0].type);
-  assert(schema.types[2].type->optional.inner->user.resolved == schema.types[1].type);
+  assert(schema.ptr[1].type->user.resolved == schema.ptr[0].type);
+  assert(schema.ptr[2].type->optional.inner->user.resolved == schema.ptr[1].type);
   schema_free(&schema);
 }
 
@@ -50,7 +50,7 @@ static void test_resolution_errors(void) {
 
 static void test_enum_assignment(void) {
   Schema schema = check_ok("type E enum {FOO BAR = 255 BUZZ}");
-  const EnumValue *values = schema.types[0].type->enum_values.values;
+  const EnumValue *values = schema.ptr[0].type->enum_values.ptr;
   assert(values[0].value.has_value && values[0].value.value == 0);
   assert(values[1].value.value == 255);
   assert(values[2].value.has_value && values[2].value.value == 256);
@@ -73,7 +73,7 @@ static void test_enum_errors(void) {
 
 static void test_union_tags(void) {
   Schema schema = check_ok("type U union {u8 | str = 5 | int}");
-  const UnionMember *members = schema.types[0].type->union_members.members;
+  const UnionMember *members = schema.ptr[0].type->union_members.ptr;
   assert(members[0].tag.has_value && members[0].tag.value == 0);
   assert(members[1].tag.value == 5);
   assert(members[2].tag.has_value && members[2].tag.value == 6);
@@ -157,17 +157,17 @@ static void test_nested_validation(void) {
 static void test_example_schema(void) {
   Schema schema = check_ok(EXAMPLE_SCHEMA);
 
-  const Type *department = schema.types[2].type;
-  assert(department->enum_values.values[3].value.value == 3);
-  assert(department->enum_values.values[4].value.value == 99);
+  const Type *department = schema.ptr[2].type;
+  assert(department->enum_values.ptr[3].value.value == 3);
+  assert(department->enum_values.ptr[4].value.value == 99);
 
-  const Type *employee = schema.types[5].type;
-  const Type *public_key = employee->struct_fields.fields[5].type->optional.inner;
-  assert(public_key->user.resolved == schema.types[0].type);
+  const Type *employee = schema.ptr[5].type;
+  const Type *public_key = employee->struct_fields.ptr[5].type->optional.inner;
+  assert(public_key->user.resolved == schema.ptr[0].type);
 
-  const Type *person = schema.types[7].type;
-  assert(person->union_members.members[0].tag.value == 0);
-  assert(person->union_members.members[2].tag.value == 2);
+  const Type *person = schema.ptr[7].type;
+  assert(person->union_members.ptr[0].tag.value == 0);
+  assert(person->union_members.ptr[2].tag.value == 2);
 
   schema_free(&schema);
 }

@@ -73,10 +73,10 @@ static void add_cap_unique(VEC(u32) * set, u32 cap) {
 
 static u32 resolve_cap(Gen *g, const StrBuf *path, u32 fallback) {
   Str p = {.data = path->data, .len = path->len};
-  for (size_t i = 0; i < g->cfg->overrides_len; i++) {
-    if (str_eq(g->cfg->overrides[i].path, p)) {
+  for (size_t i = 0; i < g->cfg->overrides.len; i++) {
+    if (str_eq(g->cfg->overrides.ptr[i].path, p)) {
       g->override_used[i] = true;
-      return g->cfg->overrides[i].cap;
+      return g->cfg->overrides.ptr[i].cap;
     }
   }
   return fallback;
@@ -97,7 +97,7 @@ static void path_pop(StrBuf *path, size_t saved) {
 static void union_member_bases(const Type *t, VEC(GenName) * out) {
   VEC(GenName) bases = {};
   for (size_t i = 0; i < t->union_members.len; i++) {
-    const UnionMember *m = &t->union_members.members[i];
+    const UnionMember *m = &t->union_members.ptr[i];
     assert(m->tag.has_value && "check_schema assigns implicit union tags");
     StrBuf b = {};
     if (m->type->kind == TypeKind_USER) {
@@ -119,7 +119,7 @@ static void union_member_bases(const Type *t, VEC(GenName) * out) {
     }
     if (dup) {
       StrBuf b = {};
-      strbuf_appendf(&b, "%s%" PRIu64, bases.ptr[i], t->union_members.members[i].tag.value);
+      strbuf_appendf(&b, "%s%" PRIu64, bases.ptr[i], t->union_members.ptr[i].tag.value);
       free(bases.ptr[i]);
       bases.ptr[i] = b.data;
     }
@@ -175,8 +175,8 @@ void codegen_scan_type(Gen *g, const Type *t, StrBuf *path) {
     break;
   case TypeKind_STRUCT: {
     for (size_t i = 0; i < t->struct_fields.len; i++) {
-      size_t saved = path_push(path, t->struct_fields.fields[i].name);
-      codegen_scan_type(g, t->struct_fields.fields[i].type, path);
+      size_t saved = path_push(path, t->struct_fields.ptr[i].name);
+      codegen_scan_type(g, t->struct_fields.ptr[i].type, path);
       path_pop(path, saved);
     }
     break;
@@ -192,7 +192,7 @@ void codegen_scan_type(Gen *g, const Type *t, StrBuf *path) {
     VEC_PUSH(&g->union_bases, ((UnionBases){.type = t, .bases = bases}));
     for (size_t i = 0; i < t->union_members.len; i++) {
       size_t saved = path_push(path, (Str){.data = bases.ptr[i], .len = strlen(bases.ptr[i])});
-      codegen_scan_type(g, t->union_members.members[i].type, path);
+      codegen_scan_type(g, t->union_members.ptr[i].type, path);
       path_pop(path, saved);
     }
     break;

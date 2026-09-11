@@ -102,7 +102,7 @@ static void emit_equal_step(const Gen *g, const Type *t, const char *a, const ch
   }
   case TypeKind_STRUCT:
     for (size_t i = 0; i < t->struct_fields.len; i++) {
-      const StructField *field = &t->struct_fields.fields[i];
+      const StructField *field = &t->struct_fields.ptr[i];
       char *fname = codegen_render_ident(g->cfg, field->name, g->cfg->field_case, false);
       StrBuf a_field = {};
       StrBuf b_field = {};
@@ -177,7 +177,7 @@ static void emit_union_equal_body(const Gen *g, const Type *t) {
   strbuf_free(&cond);
   strbuf_appendf(out, "  switch (a->%s) {\n", g->members.tag);
   for (size_t i = 0; i < t->union_members.len; i++) {
-    const UnionMember *m = &t->union_members.members[i];
+    const UnionMember *m = &t->union_members.ptr[i];
     char *variant = codegen_render_variant(
         g, tag_cname, (Str){.data = bases->ptr[i], .len = strlen(bases->ptr[i])});
     strbuf_appendf(out, "  case %s:\n", variant);
@@ -256,7 +256,7 @@ void codegen_emit_equal_fn(const Gen *g, const Type *t, const char *cname, bool 
     break;
   case TypeKind_STRUCT:
     for (size_t i = 0; i < t->struct_fields.len; i++) {
-      const StructField *field = &t->struct_fields.fields[i];
+      const StructField *field = &t->struct_fields.ptr[i];
       char *fname = codegen_render_ident(g->cfg, field->name, g->cfg->field_case, false);
       StrBuf a_field = {};
       StrBuf b_field = {};

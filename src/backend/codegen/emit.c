@@ -129,7 +129,7 @@ void codegen_emit_member(const Gen *g, const Type *t, const char *name, const ch
     codegen_indent(out, indent);
     strbuf_append(out, "struct {\n");
     for (size_t i = 0; i < t->struct_fields.len; i++) {
-      const StructField *field = &t->struct_fields.fields[i];
+      const StructField *field = &t->struct_fields.ptr[i];
       emit_doc_above(out, &field->doc, indent + 2);
       char *fname = codegen_render_ident(g->cfg, field->name, g->cfg->field_case, false);
       codegen_emit_member(g, field->type, fname, "", indent + 2);
@@ -288,10 +288,10 @@ static void emit_schema_enum_def(const Gen *g, const Type *t) {
     abort();
   }
   for (size_t i = 0; i < n; i++) {
-    assert(t->enum_values.values[i].value.has_value && "check_schema assigns implicit enum values");
-    entries[i].raw = t->enum_values.values[i].name;
-    entries[i].value = t->enum_values.values[i].value.value;
-    entries[i].doc = t->enum_values.values[i].doc;
+    assert(t->enum_values.ptr[i].value.has_value && "check_schema assigns implicit enum values");
+    entries[i].raw = t->enum_values.ptr[i].name;
+    entries[i].value = t->enum_values.ptr[i].value.value;
+    entries[i].doc = t->enum_values.ptr[i].doc;
   }
   emit_enum_def(g, codegen_name_of(g, t), entries, n);
   free(entries);
@@ -301,7 +301,7 @@ static void emit_struct_def(const Gen *g, const Type *t, const char *cname) {
   StrBuf *out = g->out;
   strbuf_append(out, "typedef struct {\n");
   for (size_t i = 0; i < t->struct_fields.len; i++) {
-    const StructField *field = &t->struct_fields.fields[i];
+    const StructField *field = &t->struct_fields.ptr[i];
     emit_doc_above(out, &field->doc, 2);
     char *fname = codegen_render_ident(g->cfg, field->name, g->cfg->field_case, false);
     codegen_emit_member(g, field->type, fname, "", 2);
@@ -322,9 +322,9 @@ static void emit_union_def(const Gen *g, const Type *t) {
     abort();
   }
   for (size_t i = 0; i < n; i++) {
-    assert(t->union_members.members[i].tag.has_value && "check_schema assigns implicit union tags");
+    assert(t->union_members.ptr[i].tag.has_value && "check_schema assigns implicit union tags");
     entries[i].raw = (Str){.data = bases->ptr[i], .len = strlen(bases->ptr[i])};
-    entries[i].value = t->union_members.members[i].tag.value;
+    entries[i].value = t->union_members.ptr[i].tag.value;
     entries[i].doc = (Doc){};
   }
   emit_enum_def(g, tag_cname, entries, n);
@@ -333,14 +333,14 @@ static void emit_union_def(const Gen *g, const Type *t) {
   strbuf_appendf(out, "  %s %s;\n", tag_cname, g->members.tag);
   bool any_value = false;
   for (size_t i = 0; i < n; i++) {
-    if (type_underlying(t->union_members.members[i].type)->kind != TypeKind_VOID) {
+    if (type_underlying(t->union_members.ptr[i].type)->kind != TypeKind_VOID) {
       any_value = true;
     }
   }
   if (any_value) {
     strbuf_append(out, "  union {\n");
     for (size_t i = 0; i < n; i++) {
-      const Type *mt = t->union_members.members[i].type;
+      const Type *mt = t->union_members.ptr[i].type;
       if (type_underlying(mt)->kind == TypeKind_VOID) {
         continue;
       }
@@ -372,12 +372,12 @@ void codegen_emit_derived_defs(const Gen *g, const Type *t, bool is_root) {
     break;
   case TypeKind_STRUCT:
     for (size_t i = 0; i < t->struct_fields.len; i++) {
-      codegen_emit_derived_defs(g, t->struct_fields.fields[i].type, false);
+      codegen_emit_derived_defs(g, t->struct_fields.ptr[i].type, false);
     }
     break;
   case TypeKind_UNION:
     for (size_t i = 0; i < t->union_members.len; i++) {
-      codegen_emit_derived_defs(g, t->union_members.members[i].type, false);
+      codegen_emit_derived_defs(g, t->union_members.ptr[i].type, false);
     }
     if (!is_root) {
       emit_union_def(g, t);

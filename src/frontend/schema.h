@@ -74,10 +74,7 @@ struct Type {
     struct {
       OPTIONAL(u64) length;
     } data;
-    struct {
-      EnumValue *values;
-      size_t len;
-    } enum_values;
+    SLICE(EnumValue) enum_values;
     struct {
       Type *inner;
     } optional;
@@ -89,14 +86,8 @@ struct Type {
       Type *key;
       Type *value;
     } map;
-    struct {
-      UnionMember *members;
-      size_t len;
-    } union_members;
-    struct {
-      StructField *fields;
-      size_t len;
-    } struct_fields;
+    SLICE(UnionMember) union_members;
+    SLICE(StructField) struct_fields;
     struct {
       Str name;
       Type *resolved;
@@ -112,10 +103,7 @@ typedef struct {
   Doc doc;
 } UserType;
 
-typedef struct {
-  UserType *types;
-  size_t len;
-} Schema;
+typedef SLICE(UserType) Schema;
 
 /// Follows user-type references to the concrete type. Valid only after
 /// check_schema has resolved the tree.

@@ -32,7 +32,7 @@ static void test_defaults(void) {
   assert(cfg.data_cap == 64);
   assert(cfg.list_cap == 8);
   assert(cfg.map_cap == 8);
-  assert(cfg.overrides_len == 0);
+  assert(cfg.overrides.len == 0);
 }
 
 static void test_empty(void) {
@@ -67,11 +67,11 @@ static void test_full(void) {
   assert(cfg.list_cap == 16);
   assert(cfg.data_cap == 64);
   assert(cfg.map_cap == 8);
-  assert(cfg.overrides_len == 2);
-  assert(str_eq(cfg.overrides[0].path, STR("Customer.orders")));
-  assert(cfg.overrides[0].cap == 32);
-  assert(str_eq(cfg.overrides[1].path, STR("Employee.metadata.key")));
-  assert(cfg.overrides[1].cap == 4);
+  assert(cfg.overrides.len == 2);
+  assert(str_eq(cfg.overrides.ptr[0].path, STR("Customer.orders")));
+  assert(cfg.overrides.ptr[0].cap == 32);
+  assert(str_eq(cfg.overrides.ptr[1].path, STR("Employee.metadata.key")));
+  assert(cfg.overrides.ptr[1].cap == 4);
   config_free(&cfg);
 }
 

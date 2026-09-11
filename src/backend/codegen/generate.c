@@ -47,7 +47,7 @@ static void emit_function_decls(Gen *g, const char *cname) {
   assert(root_names != nullptr);
   VEC(GenNameView) all = {};
   for (size_t i = 0; i < g->schema->len; i++) {
-    TypeKind kind = g->schema->types[i].type->kind;
+    TypeKind kind = g->schema->ptr[i].type->kind;
     if (root_names[i] != nullptr && kind != TypeKind_ENUM && kind != TypeKind_UNION) {
       VEC_PUSH(&all, root_names[i]);
     }
@@ -103,9 +103,9 @@ static void emit_header_content(Gen *g, char *const root_names[], const char *ba
     if (root_names[i] == nullptr) {
       continue;
     }
-    codegen_emit_derived_defs(g, g->schema->types[i].type, true);
-    codegen_emit_root_def(g, &g->schema->types[i], root_names[i]);
-    codegen_emit_size_define(g, g->schema->types[i].type, root_names[i]);
+    codegen_emit_derived_defs(g, g->schema->ptr[i].type, true);
+    codegen_emit_root_def(g, &g->schema->ptr[i], root_names[i]);
+    codegen_emit_size_define(g, g->schema->ptr[i].type, root_names[i]);
   }
   bool first = true;
   for (size_t i = 0; i < g->schema->len; i++) {
@@ -116,7 +116,7 @@ static void emit_header_content(Gen *g, char *const root_names[], const char *ba
       strbuf_append(out, "\n");
     }
     emit_function_decls(g, root_names[i]);
-    if (g->schema->types[i].type->kind == TypeKind_ENUM) {
+    if (g->schema->ptr[i].type->kind == TypeKind_ENUM) {
       char *fn_name = codegen_type_fn_name(g, root_names[i], "name");
       strbuf_appendf(out, "const char *%s(%s value);\n", fn_name, root_names[i]);
       free(fn_name);
@@ -126,10 +126,10 @@ static void emit_header_content(Gen *g, char *const root_names[], const char *ba
 }
 
 [[nodiscard]] static bool check_overrides_used(const Gen *g) {
-  for (size_t i = 0; i < g->cfg->overrides_len; i++) {
+  for (size_t i = 0; i < g->cfg->overrides.len; i++) {
     if (!g->override_used[i]) {
       diag_set_global(g->diag, "cap override '%.*s' does not match any schema element",
-                      (int)g->cfg->overrides[i].path.len, g->cfg->overrides[i].path.data);
+                      (int)g->cfg->overrides.ptr[i].path.len, g->cfg->overrides.ptr[i].path.data);
       return false;
     }
   }
@@ -175,7 +175,7 @@ bool codegen_generate(const Schema *schema, const Config *cfg, const char *basen
                       StrBuf *source, Diag *diag) {
   assert(schema->len > 0);
   Gen g = {.schema = schema, .cfg = cfg, .diag = diag, .out = header};
-  g.override_used = calloc(MAX(cfg->overrides_len, (size_t)1), sizeof(bool));
+  g.override_used = calloc(MAX(cfg->overrides.len, (size_t)1), sizeof(bool));
   if (g.override_used == nullptr) {
     abort();
   }
@@ -193,8 +193,8 @@ bool codegen_generate(const Schema *schema, const Config *cfg, const char *basen
     if (path.data != nullptr) {
       path.data[0] = '\0';
     }
-    strbuf_append_str(&path, schema->types[i].name);
-    codegen_scan_type(&g, schema->types[i].type, &path);
+    strbuf_append_str(&path, schema->ptr[i].name);
+    codegen_scan_type(&g, schema->ptr[i].type, &path);
   }
   strbuf_free(&path);
 
@@ -203,8 +203,8 @@ bool codegen_generate(const Schema *schema, const Config *cfg, const char *basen
     abort();
   }
   for (size_t i = 0; i < schema->len; i++) {
-    if (type_underlying(schema->types[i].type)->kind != TypeKind_VOID) {
-      root_names[i] = codegen_render_type_name(cfg, schema->types[i].name);
+    if (type_underlying(schema->ptr[i].type)->kind != TypeKind_VOID) {
+      root_names[i] = codegen_render_type_name(cfg, schema->ptr[i].name);
     }
   }
 

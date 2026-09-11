@@ -39,8 +39,8 @@ static void test_primitives(void) {
   for (size_t i = 0; i < sizeof(cases) / sizeof(cases[0]); i++) {
     Schema schema = parse_ok(cases[i].src);
     assert(schema.len == 1);
-    assert(str_eq(schema.types[0].name, STR("T")));
-    assert(schema.types[0].type->kind == cases[i].kind);
+    assert(str_eq(schema.ptr[0].name, STR("T")));
+    assert(schema.ptr[0].type->kind == cases[i].kind);
     schema_free(&schema);
   }
 }
@@ -48,107 +48,107 @@ static void test_primitives(void) {
 static void test_data(void) {
   Schema schema = parse_ok("type A data type B data[16]");
   assert(schema.len == 2);
-  assert(schema.types[0].type->kind == TypeKind_DATA);
-  assert(!schema.types[0].type->data.length.has_value);
-  assert(schema.types[1].type->kind == TypeKind_DATA);
-  assert(schema.types[1].type->data.length.has_value);
-  assert(schema.types[1].type->data.length.value == 16);
+  assert(schema.ptr[0].type->kind == TypeKind_DATA);
+  assert(!schema.ptr[0].type->data.length.has_value);
+  assert(schema.ptr[1].type->kind == TypeKind_DATA);
+  assert(schema.ptr[1].type->data.length.has_value);
+  assert(schema.ptr[1].type->data.length.value == 16);
   schema_free(&schema);
 }
 
 static void test_enum(void) {
   Schema schema = parse_ok("type E enum { FOO BAR = 255 BUZZ B2_X }");
   assert(schema.len == 1);
-  const Type *type = schema.types[0].type;
+  const Type *type = schema.ptr[0].type;
   assert(type->kind == TypeKind_ENUM);
   assert(type->enum_values.len == 4);
-  assert(str_eq(type->enum_values.values[0].name, STR("FOO")));
-  assert(!type->enum_values.values[0].value.has_value);
-  assert(str_eq(type->enum_values.values[1].name, STR("BAR")));
-  assert(type->enum_values.values[1].value.has_value);
-  assert(type->enum_values.values[1].value.value == 255);
-  assert(!type->enum_values.values[2].value.has_value);
-  assert(str_eq(type->enum_values.values[3].name, STR("B2_X")));
+  assert(str_eq(type->enum_values.ptr[0].name, STR("FOO")));
+  assert(!type->enum_values.ptr[0].value.has_value);
+  assert(str_eq(type->enum_values.ptr[1].name, STR("BAR")));
+  assert(type->enum_values.ptr[1].value.has_value);
+  assert(type->enum_values.ptr[1].value.value == 255);
+  assert(!type->enum_values.ptr[2].value.has_value);
+  assert(str_eq(type->enum_values.ptr[3].name, STR("B2_X")));
   schema_free(&schema);
 }
 
 static void test_optional(void) {
   Schema schema = parse_ok("type O optional<u32>");
-  assert(schema.types[0].type->kind == TypeKind_OPTIONAL);
-  assert(schema.types[0].type->optional.inner->kind == TypeKind_U32);
+  assert(schema.ptr[0].type->kind == TypeKind_OPTIONAL);
+  assert(schema.ptr[0].type->optional.inner->kind == TypeKind_U32);
   schema_free(&schema);
 }
 
 static void test_list(void) {
   Schema schema = parse_ok("type A list<str> type B list<uint>[10]");
-  assert(schema.types[0].type->kind == TypeKind_LIST);
-  assert(schema.types[0].type->list.elem->kind == TypeKind_STR);
-  assert(!schema.types[0].type->list.length.has_value);
-  assert(schema.types[1].type->list.length.has_value);
-  assert(schema.types[1].type->list.length.value == 10);
-  assert(schema.types[1].type->list.elem->kind == TypeKind_UINT);
+  assert(schema.ptr[0].type->kind == TypeKind_LIST);
+  assert(schema.ptr[0].type->list.elem->kind == TypeKind_STR);
+  assert(!schema.ptr[0].type->list.length.has_value);
+  assert(schema.ptr[1].type->list.length.has_value);
+  assert(schema.ptr[1].type->list.length.value == 10);
+  assert(schema.ptr[1].type->list.elem->kind == TypeKind_UINT);
   schema_free(&schema);
 }
 
 static void test_map(void) {
   Schema schema = parse_ok("type M map<u32><str>");
-  assert(schema.types[0].type->kind == TypeKind_MAP);
-  assert(schema.types[0].type->map.key->kind == TypeKind_U32);
-  assert(schema.types[0].type->map.value->kind == TypeKind_STR);
+  assert(schema.ptr[0].type->kind == TypeKind_MAP);
+  assert(schema.ptr[0].type->map.key->kind == TypeKind_U32);
+  assert(schema.ptr[0].type->map.value->kind == TypeKind_STR);
   schema_free(&schema);
 }
 
 static void test_union(void) {
   Schema schema = parse_ok("type U union {int | uint = 255 | str}");
-  const Type *type = schema.types[0].type;
+  const Type *type = schema.ptr[0].type;
   assert(type->kind == TypeKind_UNION);
   assert(type->union_members.len == 3);
-  assert(type->union_members.members[0].type->kind == TypeKind_INT);
-  assert(!type->union_members.members[0].tag.has_value);
-  assert(type->union_members.members[1].type->kind == TypeKind_UINT);
-  assert(type->union_members.members[1].tag.has_value);
-  assert(type->union_members.members[1].tag.value == 255);
-  assert(type->union_members.members[2].type->kind == TypeKind_STR);
+  assert(type->union_members.ptr[0].type->kind == TypeKind_INT);
+  assert(!type->union_members.ptr[0].tag.has_value);
+  assert(type->union_members.ptr[1].type->kind == TypeKind_UINT);
+  assert(type->union_members.ptr[1].tag.has_value);
+  assert(type->union_members.ptr[1].tag.value == 255);
+  assert(type->union_members.ptr[2].type->kind == TypeKind_STR);
   schema_free(&schema);
 }
 
 static void test_union_pipe_style(void) {
   Schema schema = parse_ok("type U union {\n  | u8\n  | str\n}");
-  assert(schema.types[0].type->union_members.len == 2);
+  assert(schema.ptr[0].type->union_members.len == 2);
   schema_free(&schema);
 
   schema = parse_ok("type U union {| u8 | str |}");
-  assert(schema.types[0].type->union_members.len == 2);
+  assert(schema.ptr[0].type->union_members.len == 2);
   schema_free(&schema);
 }
 
 static void test_struct(void) {
   Schema schema = parse_ok("type S struct { foo: uint bar: int buzz: str }");
-  const Type *type = schema.types[0].type;
+  const Type *type = schema.ptr[0].type;
   assert(type->kind == TypeKind_STRUCT);
   assert(type->struct_fields.len == 3);
-  assert(str_eq(type->struct_fields.fields[0].name, STR("foo")));
-  assert(type->struct_fields.fields[0].type->kind == TypeKind_UINT);
-  assert(str_eq(type->struct_fields.fields[2].name, STR("buzz")));
-  assert(type->struct_fields.fields[2].type->kind == TypeKind_STR);
+  assert(str_eq(type->struct_fields.ptr[0].name, STR("foo")));
+  assert(type->struct_fields.ptr[0].type->kind == TypeKind_UINT);
+  assert(str_eq(type->struct_fields.ptr[2].name, STR("buzz")));
+  assert(type->struct_fields.ptr[2].type->kind == TypeKind_STR);
   schema_free(&schema);
 }
 
 static void test_keyword_field_names(void) {
   Schema schema = parse_ok("type S struct { type: u8 data: str list: bool }");
-  const Type *type = schema.types[0].type;
+  const Type *type = schema.ptr[0].type;
   assert(type->struct_fields.len == 3);
-  assert(str_eq(type->struct_fields.fields[0].name, STR("type")));
-  assert(str_eq(type->struct_fields.fields[1].name, STR("data")));
-  assert(str_eq(type->struct_fields.fields[2].name, STR("list")));
+  assert(str_eq(type->struct_fields.ptr[0].name, STR("type")));
+  assert(str_eq(type->struct_fields.ptr[1].name, STR("data")));
+  assert(str_eq(type->struct_fields.ptr[2].name, STR("list")));
   schema_free(&schema);
 }
 
 static void test_user_type_reference(void) {
   Schema schema = parse_ok("type A u8 type B A");
-  assert(schema.types[1].type->kind == TypeKind_USER);
-  assert(str_eq(schema.types[1].type->user.name, STR("A")));
-  assert(schema.types[1].type->user.resolved == nullptr);
+  assert(schema.ptr[1].type->kind == TypeKind_USER);
+  assert(str_eq(schema.ptr[1].type->user.name, STR("A")));
+  assert(schema.ptr[1].type->user.resolved == nullptr);
   schema_free(&schema);
 }
 
@@ -156,28 +156,28 @@ static void test_example_schema(void) {
   Schema schema = parse_ok(EXAMPLE_SCHEMA);
   assert(schema.len == 8);
 
-  assert(str_eq(schema.types[0].name, STR("PublicKey")));
-  assert(schema.types[0].type->kind == TypeKind_DATA);
-  assert(schema.types[0].type->data.length.value == 128);
+  assert(str_eq(schema.ptr[0].name, STR("PublicKey")));
+  assert(schema.ptr[0].type->kind == TypeKind_DATA);
+  assert(schema.ptr[0].type->data.length.value == 128);
 
-  const Type *customer = schema.types[4].type;
-  assert(str_eq(schema.types[4].name, STR("Customer")));
+  const Type *customer = schema.ptr[4].type;
+  assert(str_eq(schema.ptr[4].name, STR("Customer")));
   assert(customer->kind == TypeKind_STRUCT);
   assert(customer->struct_fields.len == 5);
-  const Type *orders = customer->struct_fields.fields[3].type;
+  const Type *orders = customer->struct_fields.ptr[3].type;
   assert(orders->kind == TypeKind_LIST);
   assert(orders->list.elem->kind == TypeKind_STRUCT);
   assert(orders->list.elem->struct_fields.len == 2);
-  assert(str_eq(orders->list.elem->struct_fields.fields[0].name, STR("orderId")));
-  const Type *metadata = customer->struct_fields.fields[4].type;
+  assert(str_eq(orders->list.elem->struct_fields.ptr[0].name, STR("orderId")));
+  const Type *metadata = customer->struct_fields.ptr[4].type;
   assert(metadata->kind == TypeKind_MAP);
   assert(metadata->map.key->kind == TypeKind_STR);
   assert(metadata->map.value->kind == TypeKind_DATA);
 
-  const Type *person = schema.types[7].type;
+  const Type *person = schema.ptr[7].type;
   assert(person->kind == TypeKind_UNION);
   assert(person->union_members.len == 3);
-  assert(str_eq(person->union_members.members[2].type->user.name, STR("TerminatedEmployee")));
+  assert(str_eq(person->union_members.ptr[2].type->user.name, STR("TerminatedEmployee")));
 
   schema_free(&schema);
 }
@@ -260,23 +260,23 @@ static void test_docs(void) {
                            "  # reserved\n"
                            "  A = 9\n"
                            "} # bar doc\n");
-  const UserType *foo = &schema.types[0];
+  const UserType *foo = &schema.ptr[0];
   assert(foo->doc.above.len == 2);
   assert(str_eq(foo->doc.above.ptr[0], STR("doc a")));
   assert(str_eq(foo->doc.above.ptr[1], STR("doc b")));
   assert(!foo->doc.trailing.has_value);
-  const StructField *fields = foo->type->struct_fields.fields;
+  const StructField *fields = foo->type->struct_fields.ptr;
   assert(fields[0].doc.above.len == 0);
   assert(fields[0].doc.trailing.has_value);
   assert(str_eq(fields[0].doc.trailing.value, STR("x doc")));
   assert(fields[1].doc.above.len == 1);
   assert(str_eq(fields[1].doc.above.ptr[0], STR("y doc")));
   assert(!fields[1].doc.trailing.has_value);
-  const UserType *bar = &schema.types[1];
+  const UserType *bar = &schema.ptr[1];
   assert(bar->doc.above.len == 0);
   assert(!bar->doc.trailing.has_value);
-  assert(bar->type->enum_values.values[0].doc.above.len == 1);
-  assert(str_eq(bar->type->enum_values.values[0].doc.above.ptr[0], STR("reserved")));
+  assert(bar->type->enum_values.ptr[0].doc.above.len == 1);
+  assert(str_eq(bar->type->enum_values.ptr[0].doc.above.ptr[0], STR("reserved")));
   schema_free(&schema);
 }
 

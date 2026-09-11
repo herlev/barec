@@ -39,8 +39,8 @@ static WireSize enum_wire_size(const Type *t) {
   u64 min = UINT64_MAX;
   u64 max = 0;
   for (size_t i = 0; i < t->enum_values.len; i++) {
-    assert(t->enum_values.values[i].value.has_value && "check_schema assigns implicit enum values");
-    u64 n = uleb_len(t->enum_values.values[i].value.value);
+    assert(t->enum_values.ptr[i].value.has_value && "check_schema assigns implicit enum values");
+    u64 n = uleb_len(t->enum_values.ptr[i].value.value);
     min = MIN(min, n);
     max = MAX(max, n);
   }
@@ -53,7 +53,7 @@ static WireSize union_wire_size(const Gen *g, const Type *t) {
   u64 min = UINT64_MAX;
   bool members_fixed = true;
   for (size_t i = 0; i < t->union_members.len; i++) {
-    const UnionMember *m = &t->union_members.members[i];
+    const UnionMember *m = &t->union_members.ptr[i];
     assert(m->tag.has_value && "check_schema assigns implicit union tags");
     WireSize member = codegen_wire_size(g, m->type);
     u64 total = sat_add(uleb_len(m->tag.value), member.max);
@@ -68,7 +68,7 @@ static WireSize struct_wire_size(const Gen *g, const Type *t) {
   u64 sum = 0;
   bool fixed = true;
   for (size_t i = 0; i < t->struct_fields.len; i++) {
-    WireSize field = codegen_wire_size(g, t->struct_fields.fields[i].type);
+    WireSize field = codegen_wire_size(g, t->struct_fields.ptr[i].type);
     sum = sat_add(sum, field.max);
     fixed = (bool)(fixed && field.fixed);
   }

@@ -30,8 +30,8 @@ static bool enum_values_equal(const Type *a, const Type *b) {
     return false;
   }
   for (size_t i = 0; i < a->enum_values.len; i++) {
-    const EnumValue *va = &a->enum_values.values[i];
-    const EnumValue *vb = &b->enum_values.values[i];
+    const EnumValue *va = &a->enum_values.ptr[i];
+    const EnumValue *vb = &b->enum_values.ptr[i];
     if (!str_eq(va->name, vb->name) || va->value.value != vb->value.value) {
       return false;
     }
@@ -44,8 +44,8 @@ static bool union_members_equal(const Type *a, const Type *b) {
     return false;
   }
   for (size_t i = 0; i < a->union_members.len; i++) {
-    const UnionMember *ma = &a->union_members.members[i];
-    const UnionMember *mb = &b->union_members.members[i];
+    const UnionMember *ma = &a->union_members.ptr[i];
+    const UnionMember *mb = &b->union_members.ptr[i];
     assert(ma->tag.has_value && mb->tag.has_value &&
            "members are checked before the duplicate comparison");
     if (ma->tag.value != mb->tag.value || !type_equal(ma->type, mb->type)) {
@@ -60,8 +60,8 @@ static bool struct_fields_equal(const Type *a, const Type *b) {
     return false;
   }
   for (size_t i = 0; i < a->struct_fields.len; i++) {
-    const StructField *fa = &a->struct_fields.fields[i];
-    const StructField *fb = &b->struct_fields.fields[i];
+    const StructField *fa = &a->struct_fields.ptr[i];
+    const StructField *fb = &b->struct_fields.ptr[i];
     if (!str_eq(fa->name, fb->name) || !type_equal(fa->type, fb->type)) {
       return false;
     }
@@ -96,24 +96,23 @@ static bool type_equal(const Type *a, const Type *b) {
   }
 }
 
-[[nodiscard]] static bool assign_next(Checker *ctx, SrcLoc loc, OPTIONAL(u64) * slot, bool *first,
-                                      u64 *prev, const char *what) {
+[[nodiscard]] static bool assign_next(Checker *ctx, SrcLoc loc, OPTIONAL(u64) * slot,
+                                      OPTIONAL(u64) * prev, const char *what) {
   if (!slot->has_value) {
-    if (*first) {
+    if (!prev->has_value) {
       slot->value = 0;
-    } else if (*prev == UINT64_MAX) {
+    } else if (prev->value == UINT64_MAX) {
       diag_set(ctx->diag, loc, "implicit %s overflows 64 bits", what);
       return false;
     } else {
-      slot->value = *prev + 1;
+      slot->value = prev->value + 1;
     }
     slot->has_value = true;
-  } else if (!*first && slot->value <= *prev) {
+  } else if (prev->has_value && slot->value <= prev->value) {
     diag_set(ctx->diag, loc, "%ss must be in ascending order", what);
     return false;
   }
-  *prev = slot->value;
-  *first = false;
+  *prev = *slot;
   return true;
 }
 
@@ -122,13 +121,13 @@ static bool type_equal(const Type *a, const Type *b) {
 [[nodiscard]] static bool resolve_user(Checker *ctx, Type *type) {
   Str name = type->user.name;
   for (size_t i = 0; i < ctx->defined; i++) {
-    if (str_eq(ctx->schema->types[i].name, name)) {
-      type->user.resolved = ctx->schema->types[i].type;
+    if (str_eq(ctx->schema->ptr[i].name, name)) {
+      type->user.resolved = ctx->schema->ptr[i].type;
       return true;
     }
   }
   for (size_t i = ctx->defined; i < ctx->schema->len; i++) {
-    if (str_eq(ctx->schema->types[i].name, name)) {
+    if (str_eq(ctx->schema->ptr[i].name, name)) {
       if (i == ctx->defined) {
         diag_set(ctx->diag, type->loc, "recursive type definitions are not allowed");
       } else {
@@ -143,9 +142,8 @@ static bool type_equal(const Type *a, const Type *b) {
 }
 
 [[nodiscard]] static bool check_enum(Checker *ctx, Type *type) {
-  EnumValue *values = type->enum_values.values;
-  bool first = true;
-  u64 prev = 0;
+  EnumValue *values = type->enum_values.ptr;
+  OPTIONAL(u64) prev = {};
   for (size_t i = 0; i < type->enum_values.len; i++) {
     for (size_t j = 0; j < i; j++) {
       if (str_eq(values[j].name, values[i].name)) {
@@ -154,7 +152,7 @@ static bool type_equal(const Type *a, const Type *b) {
         return false;
       }
     }
-    if (!assign_next(ctx, values[i].loc, &values[i].value, &first, &prev, "enum value")) {
+    if (!assign_next(ctx, values[i].loc, &values[i].value, &prev, "enum value")) {
       return false;
     }
   }
@@ -162,14 +160,13 @@ static bool type_equal(const Type *a, const Type *b) {
 }
 
 [[nodiscard]] static bool check_union(Checker *ctx, Type *type) {
-  UnionMember *members = type->union_members.members;
-  bool first = true;
-  u64 prev = 0;
+  UnionMember *members = type->union_members.ptr;
+  OPTIONAL(u64) prev = {};
   for (size_t i = 0; i < type->union_members.len; i++) {
     if (!check_type(ctx, members[i].type)) {
       return false;
     }
-    if (!assign_next(ctx, members[i].type->loc, &members[i].tag, &first, &prev, "union tag")) {
+    if (!assign_next(ctx, members[i].type->loc, &members[i].tag, &prev, "union tag")) {
       return false;
     }
   }
@@ -185,7 +182,7 @@ static bool type_equal(const Type *a, const Type *b) {
 }
 
 [[nodiscard]] static bool check_struct(Checker *ctx, Type *type) {
-  StructField *fields = type->struct_fields.fields;
+  StructField *fields = type->struct_fields.ptr;
   for (size_t i = 0; i < type->struct_fields.len; i++) {
     for (size_t j = 0; j < i; j++) {
       if (str_eq(fields[j].name, fields[i].name)) {
@@ -285,14 +282,14 @@ bool check_schema(Schema *schema, Diag *diag) {
   Checker ctx = {.schema = schema, .diag = diag};
   for (size_t i = 0; i < schema->len; i++) {
     for (size_t j = 0; j < i; j++) {
-      if (str_eq(schema->types[j].name, schema->types[i].name)) {
-        diag_set(diag, schema->types[i].loc, "redefinition of type '%.*s'",
-                 (int)schema->types[i].name.len, schema->types[i].name.data);
+      if (str_eq(schema->ptr[j].name, schema->ptr[i].name)) {
+        diag_set(diag, schema->ptr[i].loc, "redefinition of type '%.*s'",
+                 (int)schema->ptr[i].name.len, schema->ptr[i].name.data);
         return false;
       }
     }
     ctx.defined = i;
-    if (!check_type(&ctx, schema->types[i].type)) {
+    if (!check_type(&ctx, schema->ptr[i].type)) {
       return false;
     }
   }
