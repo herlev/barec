@@ -1,8 +1,8 @@
 # barec
 
 A compiler for the [BARE](https://baremessages.org/) schema language
-that generates C types and serialization code backed by a small
-allocation-free runtime.
+that generates C types and serialization code depending only on a
+small allocation-free runtime.
 
 Given `reading.bare`:
 
@@ -32,10 +32,12 @@ typedef struct {
 [[nodiscard]] BareStatus reading_write(BareWriter *w, const Reading *value);
 [[nodiscard]] BareStatus reading_decode(Reading *out, const uint8_t buf[], size_t len);
 [[nodiscard]] BareStatus reading_encode(const Reading *value, uint8_t buf[], size_t cap, size_t *written);
+[[nodiscard]] bool reading_equal(const Reading *a, const Reading *b);
+[[nodiscard]] BareStatus reading_skip(BareReader *r);
 ```
 
-Compile them together with the runtime (`--runtime` also writes it to
-the output directory) and use plain values:
+Compile both files with the runtime (`--runtime` writes `bare.h` and
+`bare.c` next to them) and work with plain values:
 
 ```c
 Reading in = {
@@ -54,20 +56,15 @@ if (out.location.has_value) {
 }
 ```
 
-`barec check` validates a schema without generating, a `barec.conf`
-next to the schema is picked up automatically, and flags override it
-(`--help` lists them). See `examples/` for a complete client/server
-protocol.
+`reading_equal` compares decoded values structurally, `reading_skip`
+walks past one message without touching the caps (for framing
+concatenated streams or forwarding), and enums also get a `*_name`
+function returning the variant's name for logging.
 
-## Building
-
-Requires meson, ninja, and a C23 compiler.
-
-```
-meson setup build
-meson compile -C build
-meson install -C build    # installs the barec binary
-```
+`barec check` validates a schema without writing anything. A
+`barec.conf` next to the schema is picked up automatically, and flags
+(`--help` lists them) override it. See `examples/` for a complete
+client/server protocol.
 
 ## Memory model
 
@@ -80,6 +77,27 @@ copied freely, and outlive the buffer it was decoded from.
   decode and encode alike. Pick caps for the largest values you expect.
 - Every type gets a wire-size constant for sizing buffers: `X_SIZE`
   when the encoding has one exact length, `X_MAX_SIZE` otherwise.
+
+Schema types map to C like this:
+
+| BARE type                | C representation                                                  |
+| ------------------------ | ----------------------------------------------------------------- |
+| `u8`..`u64`, `i8`..`i64` | `uint8_t`..`uint64_t`, `int8_t`..`int64_t`                        |
+| `uint` / `int`           | `uint64_t` / `int64_t`                                            |
+| `f32` / `f64`, `bool`    | `float` / `double`, `bool`                                        |
+| `str`                    | `struct { char data[N]; uint32_t len; }` (`BareStrN`)             |
+| `data`                   | `struct { uint8_t data[N]; uint32_t len; }` (`BareDataN`)         |
+| `data[n]`                | `uint8_t data[n]`                                                 |
+| `list<T>`                | `struct { T items[N]; uint32_t len; }`                            |
+| `list<T>[n]`             | `T items[n]`                                                      |
+| `map<K><V>`              | `struct { struct { K key; V value; } entries[N]; uint32_t len; }` |
+| `optional<T>`            | `struct { bool has_value; T value; }`                             |
+| `enum`                   | `typedef enum : uint8_t { Type_VARIANT, ... }`                    |
+| `union`                  | `struct { TypeTag tag; union { ... } value; }`                    |
+
+N is the configured cap. Enums use the smallest underlying type that
+fits their values, and C99 output, which has no fixed-type enums,
+renders them as a typedef plus constants.
 
 `bare.h` ships string-field helpers: `BARE_STR_SET`, `BARE_STR_LIT`,
 `BARE_STR_EQ`, and the `BARE_STR64`/`BARE_STR_ARG` seen above.
@@ -103,4 +121,14 @@ str = 64                  # octets, data/list/map likewise
 
 [caps.overrides]
 Customer.orders = 16      # Type.field, with .item / .key / .value steps
+```
+
+## Building
+
+Requires meson, ninja, and a C23 compiler.
+
+```
+meson setup build
+meson compile -C build
+meson install -C build    # installs the barec binary
 ```
