@@ -31,6 +31,10 @@ BareStatus public_key_encode(const PublicKey *value, uint8_t buf[], size_t cap, 
   return BareStatus_OK;
 }
 
+bool public_key_equal(const PublicKey *a, const PublicKey *b) {
+  return memcmp(a->data, b->data, 128) == 0;
+}
+
 BareStatus time_read(BareReader *r, Time *out) {
   return bare_read_str(r, out->data, 64, &out->len);
 }
@@ -56,6 +60,10 @@ BareStatus time_encode(const Time *value, uint8_t buf[], size_t cap, size_t *wri
   BARE_TRY(time_write(&w, value));
   *written = w.len;
   return BareStatus_OK;
+}
+
+bool time_equal(const Time *a, const Time *b) {
+  return a->len == b->len && memcmp(a->data, b->data, a->len) == 0;
 }
 
 BareStatus department_read(BareReader *r, Department *out) {
@@ -105,6 +113,10 @@ BareStatus department_encode(const Department *value, uint8_t buf[], size_t cap,
   return BareStatus_OK;
 }
 
+bool department_equal(const Department *a, const Department *b) {
+  return *a == *b;
+}
+
 const char *department_name(Department value) {
   switch (value) {
   case Department_ACCOUNTING:
@@ -152,6 +164,15 @@ BareStatus address_encode(const Address *value, uint8_t buf[], size_t cap, size_
   BARE_TRY(address_write(&w, value));
   *written = w.len;
   return BareStatus_OK;
+}
+
+bool address_equal(const Address *a, const Address *b) {
+  for (uint64_t i0 = 0; i0 < 4; i0++) {
+    if (a->items[i0].len != b->items[i0].len || memcmp(a->items[i0].data, b->items[i0].data, a->items[i0].len) != 0) {
+      return false;
+    }
+  }
+  return true;
 }
 
 BareStatus customer_read(BareReader *r, Customer *out) {
@@ -241,6 +262,41 @@ BareStatus customer_encode(const Customer *value, uint8_t buf[], size_t cap, siz
   return BareStatus_OK;
 }
 
+bool customer_equal(const Customer *a, const Customer *b) {
+  if (a->name.len != b->name.len || memcmp(a->name.data, b->name.data, a->name.len) != 0) {
+    return false;
+  }
+  if (a->email.len != b->email.len || memcmp(a->email.data, b->email.data, a->email.len) != 0) {
+    return false;
+  }
+  if (!address_equal(&a->address, &b->address)) {
+    return false;
+  }
+  if (a->orders.len != b->orders.len) {
+    return false;
+  }
+  for (uint64_t i0 = 0; i0 < a->orders.len; i0++) {
+    if (a->orders.items[i0].order_id != b->orders.items[i0].order_id) {
+      return false;
+    }
+    if (a->orders.items[i0].quantity != b->orders.items[i0].quantity) {
+      return false;
+    }
+  }
+  if (a->metadata.len != b->metadata.len) {
+    return false;
+  }
+  for (uint64_t i0 = 0; i0 < a->metadata.len; i0++) {
+    if (a->metadata.entries[i0].key.len != b->metadata.entries[i0].key.len || memcmp(a->metadata.entries[i0].key.data, b->metadata.entries[i0].key.data, a->metadata.entries[i0].key.len) != 0) {
+      return false;
+    }
+    if (a->metadata.entries[i0].value.len != b->metadata.entries[i0].value.len || memcmp(a->metadata.entries[i0].value.data, b->metadata.entries[i0].value.data, a->metadata.entries[i0].value.len) != 0) {
+      return false;
+    }
+  }
+  return true;
+}
+
 BareStatus employee_read(BareReader *r, Employee *out) {
   BARE_TRY(bare_read_str(r, out->name.data, 64, &out->name.len));
   BARE_TRY(bare_read_str(r, out->email.data, 64, &out->email.len));
@@ -327,6 +383,44 @@ BareStatus employee_encode(const Employee *value, uint8_t buf[], size_t cap, siz
   return BareStatus_OK;
 }
 
+bool employee_equal(const Employee *a, const Employee *b) {
+  if (a->name.len != b->name.len || memcmp(a->name.data, b->name.data, a->name.len) != 0) {
+    return false;
+  }
+  if (a->email.len != b->email.len || memcmp(a->email.data, b->email.data, a->email.len) != 0) {
+    return false;
+  }
+  if (!address_equal(&a->address, &b->address)) {
+    return false;
+  }
+  if (!department_equal(&a->department, &b->department)) {
+    return false;
+  }
+  if (!time_equal(&a->hire_date, &b->hire_date)) {
+    return false;
+  }
+  if (a->public_key.has_value != b->public_key.has_value) {
+    return false;
+  }
+  if (a->public_key.has_value) {
+    if (!public_key_equal(&a->public_key.value, &b->public_key.value)) {
+      return false;
+    }
+  }
+  if (a->metadata.len != b->metadata.len) {
+    return false;
+  }
+  for (uint64_t i0 = 0; i0 < a->metadata.len; i0++) {
+    if (a->metadata.entries[i0].key.len != b->metadata.entries[i0].key.len || memcmp(a->metadata.entries[i0].key.data, b->metadata.entries[i0].key.data, a->metadata.entries[i0].key.len) != 0) {
+      return false;
+    }
+    if (a->metadata.entries[i0].value.len != b->metadata.entries[i0].value.len || memcmp(a->metadata.entries[i0].value.data, b->metadata.entries[i0].value.data, a->metadata.entries[i0].value.len) != 0) {
+      return false;
+    }
+  }
+  return true;
+}
+
 BareStatus person_read(BareReader *r, Person *out) {
   uint64_t tag;
   BARE_TRY(bare_read_uint(r, &tag));
@@ -381,4 +475,25 @@ BareStatus person_encode(const Person *value, uint8_t buf[], size_t cap, size_t 
   BARE_TRY(person_write(&w, value));
   *written = w.len;
   return BareStatus_OK;
+}
+
+bool person_equal(const Person *a, const Person *b) {
+  if (a->tag != b->tag) {
+    return false;
+  }
+  switch (a->tag) {
+  case PersonTag_CUSTOMER:
+    if (!customer_equal(&a->value.customer, &b->value.customer)) {
+      return false;
+    }
+    break;
+  case PersonTag_EMPLOYEE:
+    if (!employee_equal(&a->value.employee, &b->value.employee)) {
+      return false;
+    }
+    break;
+  case PersonTag_TERMINATED_EMPLOYEE:
+    break;
+  }
+  return true;
 }

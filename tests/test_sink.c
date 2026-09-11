@@ -22,14 +22,7 @@ static void test_empty_roundtrip(void) {
   };
   Packet out = {};
   roundtrip(&in, &out);
-  assert(out.kind == PacketKind_A);
-  assert(out.choice.tag == PacketChoiceTag_U32);
-  assert(out.choice.value.u32 == 0xDEADBEEF);
-  assert(out.rows.len == 0);
-  assert(!out.tags.has_value);
-  assert(!out.fp.has_value);
-  assert(out.by_mode.len == 0);
-  assert(!out.maybe.has_value);
+  assert(packet_equal(&in, &out));
 }
 
 static void test_full_roundtrip(void) {
@@ -57,31 +50,7 @@ static void test_full_roundtrip(void) {
   };
   Packet out = {};
   roundtrip(&in, &out);
-
-  assert(out.kind == PacketKind_B);
-  assert(out.pos.x == 1.5F);
-  assert(out.pos.y == -2.5F);
-  assert(out.choice.tag == PacketChoiceTag_MEMBER1);
-  assert(out.choice.value.member1.a == 7);
-  assert(out.grid.items[1][2] == 5);
-  assert(out.rows.len == 2);
-  assert(out.rows.items[0].items[0] == 0xBEEF);
-  assert(out.rows.items[1].len == 3);
-  assert(out.tags.has_value);
-  assert(BARE_STR_EQ(&out.tags.value.items[1], "beta"));
-  assert(out.fp.has_value);
-  assert(out.fp.value[15] == 0xAB);
-  assert(out.by_mode.len == 2);
-  assert(out.by_mode.entries[1].key == Mode_TURBO);
-  assert(out.by_mode.entries[1].value == 300);
-  assert(out.by_blob.len == 2);
-  assert(memcmp(out.by_blob.entries[1].key.data, "\x09\x09\x09\x09", 4) == 0);
-  assert(BARE_STR_EQ(&out.by_blob.entries[1].value, "second"));
-  assert(out.by_id.entries[0].key == 42);
-  assert(out.by_id.entries[0].value);
-  assert(out.fixed_blobs[1][7] == 0x11);
-  assert(out.maybe.has_value);
-  assert(out.maybe.value == 99);
+  assert(packet_equal(&in, &out));
 }
 
 static void test_union_data_arms(void) {
@@ -91,15 +60,12 @@ static void test_union_data_arms(void) {
   };
   Packet out = {};
   roundtrip(&in, &out);
-  assert(out.choice.tag == PacketChoiceTag_DATA);
-  assert(out.choice.value.data.len == 3);
-  assert(out.choice.value.data.data[2] == 0x0c);
+  assert(packet_equal(&in, &out));
 
   in.choice.tag = PacketChoiceTag_DATA3;
   memcpy(in.choice.value.data3, "\x77\x88", 2);
   roundtrip(&in, &out);
-  assert(out.choice.tag == PacketChoiceTag_DATA3);
-  assert(out.choice.value.data3[1] == 0x88);
+  assert(packet_equal(&in, &out));
 }
 
 static void test_duplicate_keys(void) {
@@ -134,8 +100,7 @@ static void test_varint_fields(void) {
   };
   Packet out = {};
   roundtrip(&in, &out);
-  assert(out.seq == 300);
-  assert(out.delta == -255);
+  assert(packet_equal(&in, &out));
 }
 
 static void test_counts_vector(void) {
@@ -149,8 +114,7 @@ static void test_counts_vector(void) {
   assert(memcmp(buf, expected, sizeof(expected)) == 0);
   Counts out = {};
   assert(counts_decode(&out, buf, written) == BareStatus_OK);
-  assert(out.items[4] == 256);
-  assert(out.items[9] == 129);
+  assert(counts_equal(&in, &out));
 }
 
 static void test_invalid_optional_marker(void) {
@@ -179,15 +143,64 @@ static void test_anon_data_key_map(void) {
   };
   Packet out = {};
   roundtrip(&in, &out);
-  assert(out.by_key.len == 2);
-  assert(memcmp(out.by_key.entries[1].key, "\x02\x02\x02\x02", 4) == 0);
-  assert(out.by_key.entries[1].value == 6);
+  assert(packet_equal(&in, &out));
 
   memcpy(in.by_key.entries[1].key, "\x01\x01\x01\x01", 4);
   uint8_t buf[PACKET_MAX_SIZE];
   size_t written = 0;
   assert(packet_encode(&in, buf, sizeof(buf), &written) == BareStatus_OK);
   assert(packet_decode(&out, buf, written) == BareStatus_DUPLICATE_KEY);
+}
+
+static void test_equality(void) {
+  Packet a = {
+      .kind = PacketKind_B,
+      .pos = {.x = 1.5F, .y = -2.5F},
+      .choice = {.tag = PacketChoiceTag_MEMBER1, .value.member1.a = 7},
+      .rows = {.len = 1, .items = {{.len = 2, .items = {1, 2}}}},
+      .tags = {.has_value = true, .value = {.len = 1, .items = {BARE_STR64("alpha")}}},
+      .by_mode = {.len = 1, .entries = {{.key = Mode_ON, .value = 100}}},
+      .maybe = {.has_value = true, .value = 99},
+      .seq = 300,
+  };
+  Packet b = a;
+  assert(packet_equal(&a, &b));
+
+  b.seq = 301;
+  assert(!packet_equal(&a, &b));
+  b = a;
+  b.choice.value.member1.a = 8;
+  assert(!packet_equal(&a, &b));
+  b = a;
+  b.choice.tag = PacketChoiceTag_U32;
+  assert(!packet_equal(&a, &b));
+  b = a;
+  b.rows.items[0].items[1] = 3;
+  assert(!packet_equal(&a, &b));
+  b = a;
+  b.tags.value.items[0] = BARE_STR64("alphb");
+  assert(!packet_equal(&a, &b));
+  b = a;
+  b.by_mode.entries[0].value = 101;
+  assert(!packet_equal(&a, &b));
+  b = a;
+  b.maybe.has_value = false;
+  assert(!packet_equal(&a, &b));
+  b = a;
+  b.pos.y = 2.5F;
+  assert(!packet_equal(&a, &b));
+
+  Counts c1 = {.items = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9}};
+  Counts c2 = c1;
+  assert(counts_equal(&c1, &c2));
+  c2.items[9] = 10;
+  assert(!counts_equal(&c1, &c2));
+
+  Wide w1 = {.tag = WideTag_STR, .value.str = BARE_STR64("big")};
+  Wide w2 = w1;
+  assert(wide_equal(&w1, &w2));
+  w2.value.str = BARE_STR64("bag");
+  assert(!wide_equal(&w1, &w2));
 }
 
 static void test_enum_names(void) {
@@ -227,6 +240,7 @@ int main(void) {
   test_invalid_optional_marker();
   test_decode_cap_exceeded();
   test_anon_data_key_map();
+  test_equality();
   test_enum_names();
   test_huge_constants();
   return 0;

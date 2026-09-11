@@ -128,6 +128,11 @@ void codegen_indent(StrBuf *out, int indent);
 void codegen_emit_read_fn(const Gen *g, const Type *t, const char *cname, bool is_public);
 void codegen_emit_write_fn(const Gen *g, const Type *t, const char *cname, bool is_public);
 
+/// Emit a structural equality function for a named type. Floats compare
+/// bitwise and maps compare entries in order, so two values are equal
+/// exactly when their encodings are.
+void codegen_emit_equal_fn(const Gen *g, const Type *t, const char *cname, bool is_public);
+
 /// Emits the whole generated source file into g->out: derived helpers in
 /// post-order, then read/write/decode/encode per user type.
 void codegen_emit_source_content(const Gen *g, char *const root_names[], const char *basename);

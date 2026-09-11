@@ -75,24 +75,29 @@ typedef struct {
 [[nodiscard]] BareStatus acme_user_id_write(BareWriter *w, const AcmeUserId *value);
 [[nodiscard]] BareStatus acme_user_id_decode(AcmeUserId *out, const uint8_t buf[], size_t len);
 [[nodiscard]] BareStatus acme_user_id_encode(const AcmeUserId *value, uint8_t buf[], size_t cap, size_t *written);
+[[nodiscard]] bool acme_user_id_equal(const AcmeUserId *a, const AcmeUserId *b);
 
 [[nodiscard]] BareStatus acme_color_read(BareReader *r, AcmeColor *out);
 [[nodiscard]] BareStatus acme_color_write(BareWriter *w, const AcmeColor *value);
 [[nodiscard]] BareStatus acme_color_decode(AcmeColor *out, const uint8_t buf[], size_t len);
 [[nodiscard]] BareStatus acme_color_encode(const AcmeColor *value, uint8_t buf[], size_t cap, size_t *written);
+[[nodiscard]] bool acme_color_equal(const AcmeColor *a, const AcmeColor *b);
 const char *acme_color_name(AcmeColor value);
 
 [[nodiscard]] BareStatus acme_profile_read(BareReader *r, AcmeProfile *out);
 [[nodiscard]] BareStatus acme_profile_write(BareWriter *w, const AcmeProfile *value);
 [[nodiscard]] BareStatus acme_profile_decode(AcmeProfile *out, const uint8_t buf[], size_t len);
 [[nodiscard]] BareStatus acme_profile_encode(const AcmeProfile *value, uint8_t buf[], size_t cap, size_t *written);
+[[nodiscard]] bool acme_profile_equal(const AcmeProfile *a, const AcmeProfile *b);
 
 [[nodiscard]] BareStatus acme_login_event_read(BareReader *r, AcmeLoginEvent *out);
 [[nodiscard]] BareStatus acme_login_event_write(BareWriter *w, const AcmeLoginEvent *value);
 [[nodiscard]] BareStatus acme_login_event_decode(AcmeLoginEvent *out, const uint8_t buf[], size_t len);
 [[nodiscard]] BareStatus acme_login_event_encode(const AcmeLoginEvent *value, uint8_t buf[], size_t cap, size_t *written);
+[[nodiscard]] bool acme_login_event_equal(const AcmeLoginEvent *a, const AcmeLoginEvent *b);
 
 [[nodiscard]] BareStatus acme_event_read(BareReader *r, AcmeEvent *out);
 [[nodiscard]] BareStatus acme_event_write(BareWriter *w, const AcmeEvent *value);
 [[nodiscard]] BareStatus acme_event_decode(AcmeEvent *out, const uint8_t buf[], size_t len);
 [[nodiscard]] BareStatus acme_event_encode(const AcmeEvent *value, uint8_t buf[], size_t cap, size_t *written);
+[[nodiscard]] bool acme_event_equal(const AcmeEvent *a, const AcmeEvent *b);

@@ -75,24 +75,29 @@ typedef struct {
 [[nodiscard]] BareStatus user_id_write(BareWriter *w, const user_id_t *value);
 [[nodiscard]] BareStatus user_id_decode(user_id_t *out, const uint8_t buf[], size_t len);
 [[nodiscard]] BareStatus user_id_encode(const user_id_t *value, uint8_t buf[], size_t cap, size_t *written);
+[[nodiscard]] bool user_id_equal(const user_id_t *a, const user_id_t *b);
 
 [[nodiscard]] BareStatus color_read(BareReader *r, color_t *out);
 [[nodiscard]] BareStatus color_write(BareWriter *w, const color_t *value);
 [[nodiscard]] BareStatus color_decode(color_t *out, const uint8_t buf[], size_t len);
 [[nodiscard]] BareStatus color_encode(const color_t *value, uint8_t buf[], size_t cap, size_t *written);
+[[nodiscard]] bool color_equal(const color_t *a, const color_t *b);
 const char *color_name(color_t value);
 
 [[nodiscard]] BareStatus profile_read(BareReader *r, profile_t *out);
 [[nodiscard]] BareStatus profile_write(BareWriter *w, const profile_t *value);
 [[nodiscard]] BareStatus profile_decode(profile_t *out, const uint8_t buf[], size_t len);
 [[nodiscard]] BareStatus profile_encode(const profile_t *value, uint8_t buf[], size_t cap, size_t *written);
+[[nodiscard]] bool profile_equal(const profile_t *a, const profile_t *b);
 
 [[nodiscard]] BareStatus login_event_read(BareReader *r, login_event_t *out);
 [[nodiscard]] BareStatus login_event_write(BareWriter *w, const login_event_t *value);
 [[nodiscard]] BareStatus login_event_decode(login_event_t *out, const uint8_t buf[], size_t len);
 [[nodiscard]] BareStatus login_event_encode(const login_event_t *value, uint8_t buf[], size_t cap, size_t *written);
+[[nodiscard]] bool login_event_equal(const login_event_t *a, const login_event_t *b);
 
 [[nodiscard]] BareStatus event_read(BareReader *r, event_t *out);
 [[nodiscard]] BareStatus event_write(BareWriter *w, const event_t *value);
 [[nodiscard]] BareStatus event_decode(event_t *out, const uint8_t buf[], size_t len);
 [[nodiscard]] BareStatus event_encode(const event_t *value, uint8_t buf[], size_t cap, size_t *written);
+[[nodiscard]] bool event_equal(const event_t *a, const event_t *b);

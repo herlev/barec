@@ -218,6 +218,22 @@ static void test_enum_name_fns(void) {
   free_generated(&gen);
 }
 
+static void test_equal_fns(void) {
+  Config cfg = config_default();
+  Generated gen = generate_ok("type Point struct { x: f32 name: str }\n"
+                              "type Wrapped Point\n",
+                              &cfg);
+  assert(strstr(gen.header.data,
+                "[[nodiscard]] bool point_equal(const Point *a, const Point *b);") != nullptr);
+  assert(strstr(gen.source.data, "if (memcmp(&a->x, &b->x, sizeof(a->x)) != 0) {") != nullptr);
+  assert(strstr(gen.source.data,
+                "if (a->name.len != b->name.len || "
+                "memcmp(a->name.data, b->name.data, a->name.len) != 0) {") != nullptr);
+  assert(strstr(gen.source.data, "bool wrapped_equal(const Wrapped *a, const Wrapped *b) {\n"
+                                 "  return point_equal(a, b);") != nullptr);
+  free_generated(&gen);
+}
+
 static void test_size_defines(void) {
   Config cfg = config_default();
   Generated gen = generate_ok("type Point struct { x: f32 y: f32 }\n"
@@ -267,6 +283,7 @@ int main(void) {
   test_screaming_enum_variants();
   test_type_suffix();
   test_enum_name_fns();
+  test_equal_fns();
   test_size_defines();
   test_name_collision();
   return 0;

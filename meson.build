@@ -21,6 +21,7 @@ barec_lib = static_library(
   'barec_lib',
   [
     'src/backend/codegen/emit.c',
+    'src/backend/codegen/equal.c',
     'src/backend/codegen/funcs.c',
     'src/backend/codegen/generate.c',
     'src/backend/codegen/ident.c',

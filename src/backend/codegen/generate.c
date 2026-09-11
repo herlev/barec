@@ -31,6 +31,9 @@ static void emit_function_decls(Gen *g, const char *cname) {
                  "%s BareStatus %s(const %s *value, uint8_t buf[], size_t cap, size_t "
                  "*written);\n",
                  nd, fn_encode, cname);
+  char *fn_equal = codegen_type_fn_name(g, cname, "equal");
+  strbuf_appendf(out, "%s bool %s(const %s *a, const %s *b);\n", nd, fn_equal, cname, cname);
+  free(fn_equal);
   free(fn_read);
   free(fn_write);
   free(fn_decode);

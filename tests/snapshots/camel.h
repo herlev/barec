@@ -75,24 +75,29 @@ typedef struct {
 [[nodiscard]] BareStatus userIdWrite(BareWriter *w, const UserId *value);
 [[nodiscard]] BareStatus userIdDecode(UserId *out, const uint8_t buf[], size_t len);
 [[nodiscard]] BareStatus userIdEncode(const UserId *value, uint8_t buf[], size_t cap, size_t *written);
+[[nodiscard]] bool userIdEqual(const UserId *a, const UserId *b);
 
 [[nodiscard]] BareStatus colorRead(BareReader *r, Color *out);
 [[nodiscard]] BareStatus colorWrite(BareWriter *w, const Color *value);
 [[nodiscard]] BareStatus colorDecode(Color *out, const uint8_t buf[], size_t len);
 [[nodiscard]] BareStatus colorEncode(const Color *value, uint8_t buf[], size_t cap, size_t *written);
+[[nodiscard]] bool colorEqual(const Color *a, const Color *b);
 const char *colorName(Color value);
 
 [[nodiscard]] BareStatus profileRead(BareReader *r, Profile *out);
 [[nodiscard]] BareStatus profileWrite(BareWriter *w, const Profile *value);
 [[nodiscard]] BareStatus profileDecode(Profile *out, const uint8_t buf[], size_t len);
 [[nodiscard]] BareStatus profileEncode(const Profile *value, uint8_t buf[], size_t cap, size_t *written);
+[[nodiscard]] bool profileEqual(const Profile *a, const Profile *b);
 
 [[nodiscard]] BareStatus loginEventRead(BareReader *r, LoginEvent *out);
 [[nodiscard]] BareStatus loginEventWrite(BareWriter *w, const LoginEvent *value);
 [[nodiscard]] BareStatus loginEventDecode(LoginEvent *out, const uint8_t buf[], size_t len);
 [[nodiscard]] BareStatus loginEventEncode(const LoginEvent *value, uint8_t buf[], size_t cap, size_t *written);
+[[nodiscard]] bool loginEventEqual(const LoginEvent *a, const LoginEvent *b);
 
 [[nodiscard]] BareStatus eventRead(BareReader *r, Event *out);
 [[nodiscard]] BareStatus eventWrite(BareWriter *w, const Event *value);
 [[nodiscard]] BareStatus eventDecode(Event *out, const uint8_t buf[], size_t len);
 [[nodiscard]] BareStatus eventEncode(const Event *value, uint8_t buf[], size_t cap, size_t *written);
+[[nodiscard]] bool eventEqual(const Event *a, const Event *b);
