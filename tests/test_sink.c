@@ -2,8 +2,12 @@
 #include "sink.h"
 
 #include <assert.h>
+#include <signal.h>
 #include <stdint.h>
+#include <stdio.h>
 #include <string.h>
+#include <sys/wait.h>
+#include <unistd.h>
 
 static_assert(BLOB_SIZE == 4);
 static_assert(COUNTS_MAX_SIZE == 100);
@@ -274,6 +278,52 @@ static void test_huge_constants(void) {
   assert(BARE_STR_EQ(&wout.value.str, "big"));
 }
 
+static Packet violating;
+
+static void call_size(void) { (void)packet_size(&violating); }
+
+static void call_equal(void) { (void)packet_equal(&violating, &violating); }
+
+static void expect_contract_abort(void (*fn)(void)) {
+  pid_t pid = fork();
+  assert(pid >= 0);
+  if (pid == 0) {
+    (void)freopen("contract_stderr.log", "w", stderr);
+    setvbuf(stderr, NULL, _IONBF, 0);
+    fn();
+    _exit(0);
+  }
+  int status = 0;
+  assert(waitpid(pid, &status, 0) == pid);
+  assert(WIFSIGNALED(status) && WTERMSIG(status) == SIGABRT);
+  char msg[256] = {0};
+  FILE *log = fopen("contract_stderr.log", "r");
+  assert(log != nullptr);
+  assert(fread(msg, 1, sizeof(msg) - 1, log) > 0);
+  fclose(log);
+  remove("contract_stderr.log");
+  assert(strstr(msg, "BARE_ASSERT(") != nullptr);
+}
+
+static void test_contract_violations(void) {
+  violating = (Packet){.kind = PacketKind_A, .choice.tag = PacketChoiceTag_U32};
+  violating.rows.len = 99;
+  expect_contract_abort(call_size);
+  expect_contract_abort(call_equal);
+
+  violating.rows.len = 0;
+  violating.by_mode.len = 99;
+  expect_contract_abort(call_size);
+  expect_contract_abort(call_equal);
+
+  violating.by_mode.len = 0;
+  violating.tags = (typeof(violating.tags)){.has_value = true};
+  violating.tags.value.len = 1;
+  violating.tags.value.items[0].len = 65;
+  expect_contract_abort(call_size);
+  expect_contract_abort(call_equal);
+}
+
 int main(void) {
   test_empty_roundtrip();
   test_full_roundtrip();
@@ -288,5 +338,6 @@ int main(void) {
   test_skip();
   test_enum_names();
   test_huge_constants();
+  test_contract_violations();
   return 0;
 }

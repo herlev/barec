@@ -73,6 +73,8 @@ BareStatus time_encode(const Time *value, uint8_t buf[], size_t cap, size_t *wri
 }
 
 bool time_equal(const Time *a, const Time *b) {
+  BARE_ASSERT(a->len <= 64);
+  BARE_ASSERT(b->len <= 64);
   return a->len == b->len && memcmp(a->data, b->data, a->len) == 0;
 }
 
@@ -86,6 +88,7 @@ BareStatus time_skip(BareReader *r) {
 }
 
 uint64_t time_size(const Time *value) {
+  BARE_ASSERT(value->len <= 64);
   return bare_uint_size(value->len) + value->len;
 }
 
@@ -201,6 +204,8 @@ BareStatus address_encode(const Address *value, uint8_t buf[], size_t cap, size_
 
 bool address_equal(const Address *a, const Address *b) {
   for (uint64_t i0 = 0; i0 < 4; i0++) {
+    BARE_ASSERT(a->items[i0].len <= 64);
+    BARE_ASSERT(b->items[i0].len <= 64);
     if (a->items[i0].len != b->items[i0].len || memcmp(a->items[i0].data, b->items[i0].data, a->items[i0].len) != 0) {
       return false;
     }
@@ -222,6 +227,7 @@ BareStatus address_skip(BareReader *r) {
 uint64_t address_size(const Address *value) {
   uint64_t n = 0;
   for (uint64_t i0 = 0; i0 < 4; i0++) {
+    BARE_ASSERT(value->items[i0].len <= 64);
     n += bare_uint_size(value->items[i0].len) + value->items[i0].len;
   }
   return n;
@@ -315,15 +321,21 @@ BareStatus customer_encode(const Customer *value, uint8_t buf[], size_t cap, siz
 }
 
 bool customer_equal(const Customer *a, const Customer *b) {
+  BARE_ASSERT(a->name.len <= 64);
+  BARE_ASSERT(b->name.len <= 64);
   if (a->name.len != b->name.len || memcmp(a->name.data, b->name.data, a->name.len) != 0) {
     return false;
   }
+  BARE_ASSERT(a->email.len <= 64);
+  BARE_ASSERT(b->email.len <= 64);
   if (a->email.len != b->email.len || memcmp(a->email.data, b->email.data, a->email.len) != 0) {
     return false;
   }
   if (!address_equal(&a->address, &b->address)) {
     return false;
   }
+  BARE_ASSERT(a->orders.len <= 8);
+  BARE_ASSERT(b->orders.len <= 8);
   if (a->orders.len != b->orders.len) {
     return false;
   }
@@ -335,13 +347,19 @@ bool customer_equal(const Customer *a, const Customer *b) {
       return false;
     }
   }
+  BARE_ASSERT(a->metadata.len <= 8);
+  BARE_ASSERT(b->metadata.len <= 8);
   if (a->metadata.len != b->metadata.len) {
     return false;
   }
   for (uint64_t i0 = 0; i0 < a->metadata.len; i0++) {
+    BARE_ASSERT(a->metadata.entries[i0].key.len <= 64);
+    BARE_ASSERT(b->metadata.entries[i0].key.len <= 64);
     if (a->metadata.entries[i0].key.len != b->metadata.entries[i0].key.len || memcmp(a->metadata.entries[i0].key.data, b->metadata.entries[i0].key.data, a->metadata.entries[i0].key.len) != 0) {
       return false;
     }
+    BARE_ASSERT(a->metadata.entries[i0].value.len <= 64);
+    BARE_ASSERT(b->metadata.entries[i0].value.len <= 64);
     if (a->metadata.entries[i0].value.len != b->metadata.entries[i0].value.len || memcmp(a->metadata.entries[i0].value.data, b->metadata.entries[i0].value.data, a->metadata.entries[i0].value.len) != 0) {
       return false;
     }
@@ -389,14 +407,20 @@ BareStatus customer_skip(BareReader *r) {
 
 uint64_t customer_size(const Customer *value) {
   uint64_t n = 0;
+  BARE_ASSERT(value->name.len <= 64);
   n += bare_uint_size(value->name.len) + value->name.len;
+  BARE_ASSERT(value->email.len <= 64);
   n += bare_uint_size(value->email.len) + value->email.len;
   n += address_size(&value->address);
+  BARE_ASSERT(value->orders.len <= 8);
   n += bare_uint_size(value->orders.len);
   n += (uint64_t)value->orders.len * 12;
+  BARE_ASSERT(value->metadata.len <= 8);
   n += bare_uint_size(value->metadata.len);
   for (uint64_t i0 = 0; i0 < value->metadata.len; i0++) {
+    BARE_ASSERT(value->metadata.entries[i0].key.len <= 64);
     n += bare_uint_size(value->metadata.entries[i0].key.len) + value->metadata.entries[i0].key.len;
+    BARE_ASSERT(value->metadata.entries[i0].value.len <= 64);
     n += bare_uint_size(value->metadata.entries[i0].value.len) + value->metadata.entries[i0].value.len;
   }
   return n;
@@ -489,9 +513,13 @@ BareStatus employee_encode(const Employee *value, uint8_t buf[], size_t cap, siz
 }
 
 bool employee_equal(const Employee *a, const Employee *b) {
+  BARE_ASSERT(a->name.len <= 64);
+  BARE_ASSERT(b->name.len <= 64);
   if (a->name.len != b->name.len || memcmp(a->name.data, b->name.data, a->name.len) != 0) {
     return false;
   }
+  BARE_ASSERT(a->email.len <= 64);
+  BARE_ASSERT(b->email.len <= 64);
   if (a->email.len != b->email.len || memcmp(a->email.data, b->email.data, a->email.len) != 0) {
     return false;
   }
@@ -512,13 +540,19 @@ bool employee_equal(const Employee *a, const Employee *b) {
       return false;
     }
   }
+  BARE_ASSERT(a->metadata.len <= 8);
+  BARE_ASSERT(b->metadata.len <= 8);
   if (a->metadata.len != b->metadata.len) {
     return false;
   }
   for (uint64_t i0 = 0; i0 < a->metadata.len; i0++) {
+    BARE_ASSERT(a->metadata.entries[i0].key.len <= 64);
+    BARE_ASSERT(b->metadata.entries[i0].key.len <= 64);
     if (a->metadata.entries[i0].key.len != b->metadata.entries[i0].key.len || memcmp(a->metadata.entries[i0].key.data, b->metadata.entries[i0].key.data, a->metadata.entries[i0].key.len) != 0) {
       return false;
     }
+    BARE_ASSERT(a->metadata.entries[i0].value.len <= 64);
+    BARE_ASSERT(b->metadata.entries[i0].value.len <= 64);
     if (a->metadata.entries[i0].value.len != b->metadata.entries[i0].value.len || memcmp(a->metadata.entries[i0].value.data, b->metadata.entries[i0].value.data, a->metadata.entries[i0].value.len) != 0) {
       return false;
     }
@@ -571,7 +605,9 @@ BareStatus employee_skip(BareReader *r) {
 
 uint64_t employee_size(const Employee *value) {
   uint64_t n = 0;
+  BARE_ASSERT(value->name.len <= 64);
   n += bare_uint_size(value->name.len) + value->name.len;
+  BARE_ASSERT(value->email.len <= 64);
   n += bare_uint_size(value->email.len) + value->email.len;
   n += address_size(&value->address);
   n += 1;
@@ -580,9 +616,12 @@ uint64_t employee_size(const Employee *value) {
   if (value->public_key.has_value) {
     n += 128;
   }
+  BARE_ASSERT(value->metadata.len <= 8);
   n += bare_uint_size(value->metadata.len);
   for (uint64_t i0 = 0; i0 < value->metadata.len; i0++) {
+    BARE_ASSERT(value->metadata.entries[i0].key.len <= 64);
     n += bare_uint_size(value->metadata.entries[i0].key.len) + value->metadata.entries[i0].key.len;
+    BARE_ASSERT(value->metadata.entries[i0].value.len <= 64);
     n += bare_uint_size(value->metadata.entries[i0].value.len) + value->metadata.entries[i0].value.len;
   }
   return n;

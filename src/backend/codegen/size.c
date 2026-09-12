@@ -192,6 +192,7 @@ static void emit_size_step(const Gen *g, const Type *t, const char *v, int inden
     break;
   case TypeKind_STR:
   case TypeKind_DATA:
+    emit_size_line(g, indent, "BARE_ASSERT(%s.len <= %" PRIu32 ");\n", v, codegen_cap_of(g, t));
     emit_size_line(g, indent, "n += bare_uint_size(%s.len) + %s.len;\n", v, v);
     break;
   case TypeKind_USER: {
@@ -232,6 +233,8 @@ static void emit_size_step(const Gen *g, const Type *t, const char *v, int inden
       strbuf_free(&bound);
     } else {
       WireSize elem = codegen_wire_size(g, t->list.elem);
+      emit_size_line(g, indent, "BARE_ASSERT(%s.%s <= %" PRIu32 ");\n", v, g->members.len,
+                     codegen_cap_of(g, t));
       emit_size_line(g, indent, "n += bare_uint_size(%s.%s);\n", v, g->members.len);
       if (elem.fixed) {
         emit_size_line(g, indent, "n += (uint64_t)%s.%s * %s;\n", v, g->members.len,
@@ -250,6 +253,8 @@ static void emit_size_step(const Gen *g, const Type *t, const char *v, int inden
   case TypeKind_MAP: {
     WireSize key = codegen_wire_size(g, t->map.key);
     WireSize value = codegen_wire_size(g, t->map.value);
+    emit_size_line(g, indent, "BARE_ASSERT(%s.%s <= %" PRIu32 ");\n", v, g->members.len,
+                   codegen_cap_of(g, t));
     emit_size_line(g, indent, "n += bare_uint_size(%s.%s);\n", v, g->members.len);
     if (key.fixed && value.fixed) {
       emit_size_line(g, indent, "n += (uint64_t)%s.%s * %s;\n", v, g->members.len,
@@ -341,6 +346,7 @@ void codegen_emit_size_fn(const Gen *g, const Type *t, const char *cname, bool i
     break;
   case TypeKind_STR:
   case TypeKind_DATA:
+    strbuf_appendf(out, "  BARE_ASSERT(value->len <= %" PRIu32 ");\n", codegen_cap_of(g, t));
     strbuf_append(out, "  return bare_uint_size(value->len) + value->len;\n");
     break;
   case TypeKind_STRUCT:

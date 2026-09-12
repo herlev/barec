@@ -247,6 +247,7 @@ static void test_size_fns(void) {
   assert(strstr(gen.source.data, "uint64_t msg_size(const Msg *value) {\n"
                                  "  uint64_t n = 0;\n"
                                  "  n += 8;\n"
+                                 "  BARE_ASSERT(value->note.len <= 64);\n"
                                  "  n += bare_uint_size(value->note.len) + value->note.len;\n"
                                  "  n += bare_uint_size(value->n);\n"
                                  "  return n;\n") != nullptr);

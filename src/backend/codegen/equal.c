@@ -15,6 +15,11 @@
 static void emit_equal_step(const Gen *g, const Type *t, const char *a, const char *b, int indent,
                             int depth);
 
+static void emit_len_assert(const Gen *g, const char *value, u32 cap, int indent) {
+  codegen_indent(g->out, indent);
+  strbuf_appendf(g->out, "BARE_ASSERT(%s.len <= %" PRIu32 ");\n", value, cap);
+}
+
 static void emit_fail_if(const Gen *g, int indent, const char *cond) {
   StrBuf *out = g->out;
   codegen_indent(out, indent);
@@ -62,6 +67,8 @@ static void emit_equal_step(const Gen *g, const Type *t, const char *a, const ch
     emit_fail_if(g, indent, cond.data);
     break;
   case TypeKind_STR:
+    emit_len_assert(g, a, codegen_cap_of(g, t), indent);
+    emit_len_assert(g, b, codegen_cap_of(g, t), indent);
     strbuf_appendf(&cond, "%s.len != %s.len || memcmp(%s.data, %s.data, %s.len) != 0", a, b, a, b,
                    a);
     emit_fail_if(g, indent, cond.data);
@@ -70,6 +77,8 @@ static void emit_equal_step(const Gen *g, const Type *t, const char *a, const ch
     if (t->data.length.has_value) {
       strbuf_appendf(&cond, "memcmp(%s, %s, %" PRIu64 ") != 0", a, b, t->data.length.value);
     } else {
+      emit_len_assert(g, a, codegen_cap_of(g, t), indent);
+      emit_len_assert(g, b, codegen_cap_of(g, t), indent);
       strbuf_appendf(&cond, "%s.len != %s.len || memcmp(%s.data, %s.data, %s.len) != 0", a, b, a, b,
                      a);
     }
@@ -121,6 +130,8 @@ static void emit_equal_step(const Gen *g, const Type *t, const char *a, const ch
       emit_equal_list(g, t->list.elem, a, b, bound.data, indent, depth);
       strbuf_free(&bound);
     } else {
+      emit_len_assert(g, a, codegen_cap_of(g, t), indent);
+      emit_len_assert(g, b, codegen_cap_of(g, t), indent);
       strbuf_appendf(&cond, "%s.%s != %s.%s", a, g->members.len, b, g->members.len);
       emit_fail_if(g, indent, cond.data);
       StrBuf a_items = {};
@@ -136,6 +147,8 @@ static void emit_equal_step(const Gen *g, const Type *t, const char *a, const ch
     }
     break;
   case TypeKind_MAP: {
+    emit_len_assert(g, a, codegen_cap_of(g, t), indent);
+    emit_len_assert(g, b, codegen_cap_of(g, t), indent);
     strbuf_appendf(&cond, "%s.%s != %s.%s", a, g->members.len, b, g->members.len);
     emit_fail_if(g, indent, cond.data);
     codegen_indent(out, indent);
@@ -220,6 +233,9 @@ void codegen_emit_equal_fn(const Gen *g, const Type *t, const char *cname, bool 
     strbuf_append(out, "  return memcmp(a, b, sizeof(*a)) == 0;\n");
     break;
   case TypeKind_STR:
+    strbuf_appendf(out,
+                   "  BARE_ASSERT(a->len <= %" PRIu32 ");\n  BARE_ASSERT(b->len <= %" PRIu32 ");\n",
+                   codegen_cap_of(g, t), codegen_cap_of(g, t));
     strbuf_append(out, "  return a->len == b->len && memcmp(a->data, b->data, a->len) == 0;\n");
     break;
   case TypeKind_DATA:
@@ -227,6 +243,9 @@ void codegen_emit_equal_fn(const Gen *g, const Type *t, const char *cname, bool 
       strbuf_appendf(out, "  return memcmp(a->%s, b->%s, %" PRIu64 ") == 0;\n", g->members.data,
                      g->members.data, t->data.length.value);
     } else {
+      strbuf_appendf(
+          out, "  BARE_ASSERT(a->len <= %" PRIu32 ");\n  BARE_ASSERT(b->len <= %" PRIu32 ");\n",
+          codegen_cap_of(g, t), codegen_cap_of(g, t));
       strbuf_append(out, "  return a->len == b->len && memcmp(a->data, b->data, a->len) == 0;\n");
     }
     break;
