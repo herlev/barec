@@ -2,8 +2,12 @@
 
 #include <assert.h>
 #include <math.h>
+#include <signal.h>
 #include <stdint.h>
+#include <stdio.h>
 #include <string.h>
+#include <sys/wait.h>
+#include <unistd.h>
 
 #define BYTES(...) (const uint8_t[]){__VA_ARGS__}, sizeof((const uint8_t[]){__VA_ARGS__})
 
@@ -308,6 +312,20 @@ static void test_utf8(void) {
   assert(!bare_utf8_valid(BYTES(0xff)));
 }
 
+static void test_assert(void) {
+  BARE_ASSERT(1 + 1 == 2);
+  pid_t pid = fork();
+  assert(pid >= 0);
+  if (pid == 0) {
+    (void)freopen("/dev/null", "w", stderr);
+    BARE_ASSERT(1 + 1 == 3);
+    _exit(0);
+  }
+  int status = 0;
+  assert(waitpid(pid, &status, 0) == pid);
+  assert(WIFSIGNALED(status) && WTERMSIG(status) == SIGABRT);
+}
+
 int main(void) {
   test_uint_vectors();
   test_int_vectors();
@@ -321,5 +339,6 @@ int main(void) {
   test_short_write();
   test_str_helpers();
   test_utf8();
+  test_assert();
   return 0;
 }

@@ -9,6 +9,16 @@ static_assert(sizeof(float) == 4, "float must be IEEE 754 binary32");
 static_assert(sizeof(double) == 8, "double must be IEEE 754 binary64");
 #endif
 
+#if __STDC_HOSTED__
+#include <stdio.h>
+#include <stdlib.h>
+
+void bare_assert_failed(const char *cond, const char *file, unsigned line, const char *func) {
+  fprintf(stderr, "%s:%u: %s: BARE_ASSERT(%s) failed\n", file, line, func, cond);
+  abort();
+}
+#endif
+
 enum { UINT_MAX_OCTETS = 10 };
 
 BareReader bare_reader_new(const uint8_t data[], size_t len) {

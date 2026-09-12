@@ -6,16 +6,40 @@
 
 #if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 202311L
 #define BARE_NODISCARD [[nodiscard]]
+#define BARE_NORETURN [[noreturn]]
 #define BARE_ENUM_U8 : uint8_t
 #define BARE_TYPEOF(x) typeof(x)
 #else
 #define BARE_ENUM_U8
 #ifdef __GNUC__
 #define BARE_NODISCARD __attribute__((warn_unused_result))
+#define BARE_NORETURN __attribute__((noreturn))
 #define BARE_TYPEOF(x) __typeof__(x)
 #else
 #define BARE_NODISCARD
+#define BARE_NORETURN
 #endif
+#endif
+
+/// Called when generated code detects a violated contract, such as a len
+/// field beyond its cap or a union tag outside the schema. Contracts only
+/// guard in-memory values constructed by application code, so a failure
+/// is always a programmer error. Wire data is never checked this way:
+/// decoding untrusted input reports invalid bytes through BareStatus and
+/// cannot trip an assert. Hosted builds get an implementation in bare.c
+/// that prints the location and aborts. Freestanding builds must provide
+/// one, so choosing a failure policy is a link-time requirement rather
+/// than a forgotten default.
+BARE_NORETURN void bare_assert_failed(const char *cond, const char *file, unsigned line,
+                                      const char *func);
+
+/// The contract check used by generated code. It is active in every build
+/// configuration, NDEBUG included. Predefine BARE_ASSERT to change the
+/// policy, or to `(void)0` to remove the checks and accept the undefined
+/// behavior they guard against.
+#ifndef BARE_ASSERT
+#define BARE_ASSERT(cond)                                                                          \
+  ((cond) ? (void)0 : bare_assert_failed(#cond, __FILE__, __LINE__, __func__))
 #endif
 
 /// Evaluates a BareStatus expression and returns it from the enclosing
