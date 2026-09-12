@@ -97,6 +97,30 @@ static void emit_trailing_doc(StrBuf *out, const Doc *doc) {
   }
 }
 
+void codegen_emit_key_equal(const Gen *g, const Type *key, const char *a, const char *b,
+                            StrBuf *out) {
+  const Type *k = type_underlying(key);
+  switch (k->kind) {
+  case TypeKind_STR:
+  case TypeKind_DATA:
+    if (k->kind == TypeKind_DATA && k->data.length.has_value) {
+      if (key->kind == TypeKind_DATA) {
+        strbuf_appendf(out, "memcmp(%s, %s, %" PRIu64 ") == 0", a, b, k->data.length.value);
+      } else {
+        strbuf_appendf(out, "memcmp(%s.%s, %s.%s, %" PRIu64 ") == 0", a, g->members.data, b,
+                       g->members.data, k->data.length.value);
+      }
+    } else {
+      strbuf_appendf(out, "%s.len == %s.len && memcmp(%s.data, %s.data, %s.len) == 0", a, b, a, b,
+                     a);
+    }
+    break;
+  default:
+    strbuf_appendf(out, "%s == %s", a, b);
+    break;
+  }
+}
+
 void codegen_emit_member(const Gen *g, const Type *t, const char *name, const char *dims,
                          int indent) {
   StrBuf *out = g->out;

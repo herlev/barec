@@ -90,30 +90,6 @@ static void emit_read_list_var(const Gen *g, const Type *elem, const char *items
   strbuf_append(out, "}\n");
 }
 
-static void emit_key_equal(const Gen *g, const Type *key, const char *a, const char *b,
-                           StrBuf *out) {
-  const Type *k = type_underlying(key);
-  switch (k->kind) {
-  case TypeKind_STR:
-  case TypeKind_DATA:
-    if (k->kind == TypeKind_DATA && k->data.length.has_value) {
-      if (key->kind == TypeKind_DATA) {
-        strbuf_appendf(out, "memcmp(%s, %s, %" PRIu64 ") == 0", a, b, k->data.length.value);
-      } else {
-        strbuf_appendf(out, "memcmp(%s.%s, %s.%s, %" PRIu64 ") == 0", a, g->members.data, b,
-                       g->members.data, k->data.length.value);
-      }
-    } else {
-      strbuf_appendf(out, "%s.len == %s.len && memcmp(%s.data, %s.data, %s.len) == 0", a, b, a, b,
-                     a);
-    }
-    break;
-  default:
-    strbuf_appendf(out, "%s == %s", a, b);
-    break;
-  }
-}
-
 static void emit_read_map(const Gen *g, const Type *key, const Type *value,
                           const char *entries_expr, const char *len_expr, u32 cap, int indent,
                           int depth) {
@@ -145,7 +121,7 @@ static void emit_read_map(const Gen *g, const Type *key, const Type *value,
   StrBuf prev_key = {};
   strbuf_appendf(&prev_key, "%s[j%d].%s", entries_expr, depth, g->members.key);
   StrBuf eq = {};
-  emit_key_equal(g, key, prev_key.data, key_expr.data, &eq);
+  codegen_emit_key_equal(g, key, prev_key.data, key_expr.data, &eq);
   codegen_indent(out, indent + 6);
   strbuf_appendf(out, "if (%s) {\n", eq.data);
   codegen_indent(out, indent + 8);

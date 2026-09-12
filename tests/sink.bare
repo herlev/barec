@@ -10,6 +10,8 @@ type Counts list<uint>[10]
 type MaybeU8 optional<u8>
 type Row list<u8>
 type Dict map<u8><u8>
+type Names map<str><u8>
+type BlobDict map<Blob><u8>
 type Huge enum {
   TINY
   BIG = 18446744073709551615

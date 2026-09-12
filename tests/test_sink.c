@@ -81,9 +81,7 @@ static void test_duplicate_keys(void) {
   };
   uint8_t buf[PACKET_MAX_SIZE];
   size_t written = 0;
-  assert(packet_encode(&in, buf, sizeof(buf), &written) == BareStatus_OK);
-  Packet out = {};
-  assert(packet_decode(&out, buf, written) == BareStatus_DUPLICATE_KEY);
+  assert(packet_encode(&in, buf, sizeof(buf), &written) == BareStatus_DUPLICATE_KEY);
 
   Packet in2 = {
       .kind = PacketKind_A,
@@ -92,8 +90,17 @@ static void test_duplicate_keys(void) {
                   .entries = {{.key.data = {'s', 'a', 'm', 'e'}},
                               {.key.data = {'s', 'a', 'm', 'e'}}}},
   };
-  assert(packet_encode(&in2, buf, sizeof(buf), &written) == BareStatus_OK);
-  assert(packet_decode(&out, buf, written) == BareStatus_DUPLICATE_KEY);
+  assert(packet_encode(&in2, buf, sizeof(buf), &written) == BareStatus_DUPLICATE_KEY);
+
+  const uint8_t dup_u8[] = {0x02, 0x01, 0x01, 0x01, 0x02};
+  Dict dict = {};
+  assert(dict_decode(&dict, dup_u8, sizeof(dup_u8)) == BareStatus_DUPLICATE_KEY);
+  const uint8_t dup_str[] = {0x02, 0x01, 'a', 0x05, 0x01, 'a', 0x06};
+  Names names = {};
+  assert(names_decode(&names, dup_str, sizeof(dup_str)) == BareStatus_DUPLICATE_KEY);
+  const uint8_t dup_blob[] = {0x02, 0x01, 0x01, 0x01, 0x01, 0x05, 0x01, 0x01, 0x01, 0x01, 0x06};
+  BlobDict blobs = {};
+  assert(blob_dict_decode(&blobs, dup_blob, sizeof(dup_blob)) == BareStatus_DUPLICATE_KEY);
 }
 
 static void test_varint_fields(void) {
@@ -153,8 +160,7 @@ static void test_anon_data_key_map(void) {
   memcpy(in.by_key.entries[1].key, "\x01\x01\x01\x01", 4);
   uint8_t buf[PACKET_MAX_SIZE];
   size_t written = 0;
-  assert(packet_encode(&in, buf, sizeof(buf), &written) == BareStatus_OK);
-  assert(packet_decode(&out, buf, written) == BareStatus_DUPLICATE_KEY);
+  assert(packet_encode(&in, buf, sizeof(buf), &written) == BareStatus_DUPLICATE_KEY);
 }
 
 static void test_equality(void) {
@@ -339,6 +345,13 @@ static void test_contract_violations(void) {
   expect_contract_abort(call_wide_equal);
 }
 
+static void test_encode_duplicate_keys(void) {
+  Dict dict = {.len = 2, .entries = {{.key = 1, .value = 1}, {.key = 1, .value = 2}}};
+  uint8_t buf[DICT_MAX_SIZE];
+  size_t written = 0;
+  assert(dict_encode(&dict, buf, sizeof(buf), &written) == BareStatus_DUPLICATE_KEY);
+}
+
 int main(void) {
   test_empty_roundtrip();
   test_full_roundtrip();
@@ -354,5 +367,6 @@ int main(void) {
   test_enum_names();
   test_huge_constants();
   test_contract_violations();
+  test_encode_duplicate_keys();
   return 0;
 }

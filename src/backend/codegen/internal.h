@@ -117,6 +117,11 @@ void codegen_emit_derived_defs(const Gen *g, const Type *t, bool is_root);
 void codegen_emit_root_def(const Gen *g, const UserType *ut, const char *cname);
 void codegen_emit_shared_typedefs(const Gen *g);
 
+/// Appends a boolean expression comparing two map keys of the given type,
+/// used by the duplicate-key checks in both read and write.
+void codegen_emit_key_equal(const Gen *g, const Type *key, const char *a, const char *b,
+                            StrBuf *out);
+
 typedef struct {
   u64 max;
   bool fixed;

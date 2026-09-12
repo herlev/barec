@@ -291,6 +291,13 @@ BareStatus customer_write(BareWriter *w, const Customer *value) {
   if (value->metadata.len > 8) {
     return BareStatus_CAP_EXCEEDED;
   }
+  for (uint32_t i0 = 1; i0 < value->metadata.len; i0++) {
+    for (uint32_t j0 = 0; j0 < i0; j0++) {
+      if (value->metadata.entries[j0].key.len == value->metadata.entries[i0].key.len && memcmp(value->metadata.entries[j0].key.data, value->metadata.entries[i0].key.data, value->metadata.entries[j0].key.len) == 0) {
+        return BareStatus_DUPLICATE_KEY;
+      }
+    }
+  }
   BARE_TRY(bare_write_uint(w, value->metadata.len));
   for (uint32_t i0 = 0; i0 < value->metadata.len; i0++) {
     if (value->metadata.entries[i0].key.len > 64) {
@@ -482,6 +489,13 @@ BareStatus employee_write(BareWriter *w, const Employee *value) {
   }
   if (value->metadata.len > 8) {
     return BareStatus_CAP_EXCEEDED;
+  }
+  for (uint32_t i0 = 1; i0 < value->metadata.len; i0++) {
+    for (uint32_t j0 = 0; j0 < i0; j0++) {
+      if (value->metadata.entries[j0].key.len == value->metadata.entries[i0].key.len && memcmp(value->metadata.entries[j0].key.data, value->metadata.entries[i0].key.data, value->metadata.entries[j0].key.len) == 0) {
+        return BareStatus_DUPLICATE_KEY;
+      }
+    }
   }
   BARE_TRY(bare_write_uint(w, value->metadata.len));
   for (uint32_t i0 = 0; i0 < value->metadata.len; i0++) {

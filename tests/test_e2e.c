@@ -152,8 +152,7 @@ static void test_errors(void) {
   set_str_field(&c->metadata.entries[1].key, "same");
   uint8_t buf[512];
   size_t written = 0;
-  assert(person_encode(&dup, buf, sizeof(buf), &written) == BareStatus_OK);
-  assert(person_decode(&p, buf, written) == BareStatus_DUPLICATE_KEY);
+  assert(person_encode(&dup, buf, sizeof(buf), &written) == BareStatus_DUPLICATE_KEY);
 
   c->metadata.len = 99;
   assert(person_encode(&dup, buf, sizeof(buf), &written) == BareStatus_CAP_EXCEEDED);
