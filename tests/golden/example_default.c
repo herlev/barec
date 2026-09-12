@@ -692,16 +692,17 @@ bool person_equal(const Person *a, const Person *b) {
     if (!customer_equal(&a->value.customer, &b->value.customer)) {
       return false;
     }
-    break;
+    return true;
   case PersonTag_EMPLOYEE:
     if (!employee_equal(&a->value.employee, &b->value.employee)) {
       return false;
     }
-    break;
+    return true;
   case PersonTag_TERMINATED_EMPLOYEE:
-    break;
+    return true;
   }
-  return true;
+  BARE_ASSERT(false && "a->tag is a valid PersonTag");
+  return false;
 }
 
 BareStatus person_skip(BareReader *r) {
@@ -737,5 +738,6 @@ uint64_t person_size(const Person *value) {
   case PersonTag_TERMINATED_EMPLOYEE:
     return 1;
   }
+  BARE_ASSERT(false && "value->tag is a valid PersonTag");
   return 0;
 }

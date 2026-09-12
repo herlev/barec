@@ -206,9 +206,10 @@ static void emit_union_equal_body(const Gen *g, const Type *t) {
       strbuf_free(&b_arm);
       free(arm);
     }
-    strbuf_append(out, "    break;\n");
+    strbuf_append(out, "    return true;\n");
   }
-  strbuf_append(out, "  }\n  return true;\n");
+  strbuf_appendf(out, "  }\n  BARE_ASSERT(false && \"a->%s is a valid %s\");\n  return false;\n",
+                 g->members.tag, tag_cname);
 }
 
 void codegen_emit_equal_fn(const Gen *g, const Type *t, const char *cname, bool is_public) {

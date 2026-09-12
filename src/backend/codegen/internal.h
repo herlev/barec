@@ -133,9 +133,8 @@ void codegen_emit_size_define(const Gen *g, const Type *t, const char *cname);
 
 /// Emits the exact-encoded-size function for a named type. Mirrors the
 /// write pass with additions instead of writes, and collapses fixed-size
-/// subtrees to constants. Every counted field is guarded by a
-/// BARE_ASSERT(len <= cap) contract check. An out-of-range union tag
-/// sizes as 0.
+/// subtrees to constants. Counted fields and union tags are guarded by
+/// BARE_ASSERT contract checks.
 void codegen_emit_size_fn(const Gen *g, const Type *t, const char *cname, bool is_public);
 
 /// Emits a capless structural skip function. Skips validate varints,
@@ -150,8 +149,8 @@ void codegen_emit_write_fn(const Gen *g, const Type *t, const char *cname, bool 
 
 /// Emit a structural equality function for a named type. Floats compare
 /// bitwise and maps compare entries in order, so two values are equal
-/// exactly when their encodings are. Every counted field of both values
-/// is guarded by a BARE_ASSERT(len <= cap) contract check.
+/// exactly when their encodings are. Counted fields of both values and
+/// union tags are guarded by BARE_ASSERT contract checks.
 void codegen_emit_equal_fn(const Gen *g, const Type *t, const char *cname, bool is_public);
 
 /// Emits the whole generated source file into g->out: derived helpers in

@@ -279,10 +279,15 @@ static void test_huge_constants(void) {
 }
 
 static Packet violating;
+static Wide violating_wide;
 
 static void call_size(void) { (void)packet_size(&violating); }
 
 static void call_equal(void) { (void)packet_equal(&violating, &violating); }
+
+static void call_wide_size(void) { (void)wide_size(&violating_wide); }
+
+static void call_wide_equal(void) { (void)wide_equal(&violating_wide, &violating_wide); }
 
 static void expect_contract_abort(void (*fn)(void)) {
   pid_t pid = fork();
@@ -322,6 +327,12 @@ static void test_contract_violations(void) {
   violating.tags.value.items[0].len = 65;
   expect_contract_abort(call_size);
   expect_contract_abort(call_equal);
+
+  violating_wide = (Wide){.tag = WideTag_U8};
+  uint64_t raw = 7;
+  memcpy(&violating_wide.tag, &raw, sizeof(violating_wide.tag));
+  expect_contract_abort(call_wide_size);
+  expect_contract_abort(call_wide_equal);
 }
 
 int main(void) {

@@ -252,6 +252,15 @@ static void test_size_fns(void) {
                                  "  n += bare_uint_size(value->n);\n"
                                  "  return n;\n") != nullptr);
   free_generated(&gen);
+
+  Generated u = generate_ok("type U union { u8 | str }", &cfg);
+  assert(strstr(u.source.data,
+                "  BARE_ASSERT(false && \"value->tag is a valid UTag\");\n  return 0;\n") !=
+         nullptr);
+  assert(strstr(u.source.data,
+                "  BARE_ASSERT(false && \"a->tag is a valid UTag\");\n  return false;\n") !=
+         nullptr);
+  free_generated(&u);
 }
 
 static void test_skip_fns(void) {

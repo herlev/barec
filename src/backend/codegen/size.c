@@ -307,7 +307,8 @@ static void emit_union_size_body(const Gen *g, const Type *t) {
     free(arm);
     strbuf_append(out, "    return n;\n  }\n");
   }
-  strbuf_append(out, "  }\n  return 0;\n");
+  strbuf_appendf(out, "  }\n  BARE_ASSERT(false && \"value->%s is a valid %s\");\n  return 0;\n",
+                 g->members.tag, tag_cname);
 }
 
 void codegen_emit_size_fn(const Gen *g, const Type *t, const char *cname, bool is_public) {
