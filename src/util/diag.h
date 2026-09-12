@@ -11,7 +11,7 @@ typedef struct {
 /// One error with an optional location, formatted into a fixed buffer.
 typedef struct {
   OPTIONAL(SrcLoc) loc;
-  char message[256];
+  char message[1024];
 } Diag;
 
 /// Formats the message with a location, truncating if it does not fit.

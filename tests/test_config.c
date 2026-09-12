@@ -134,6 +134,32 @@ static void test_errors(void) {
 
   diag = load_fail("[caps.overrides]\nbad path = 1\n");
   assert(strstr(diag.message, "invalid override path") != nullptr);
+
+  diag = load_fail("[caps]\nstr = 16\nstr = 32\n");
+  assert(strstr(diag.message, "duplicate key 'str'") != nullptr);
+  assert(diag.loc.value.line == 3);
+
+  diag = load_fail("[naming]\nprefix = a\nprefix = b\n");
+  assert(strstr(diag.message, "duplicate key 'prefix'") != nullptr);
+
+  char big[600];
+  size_t hdr = strlen("[caps.overrides]\n");
+  memcpy(big, "[caps.overrides]\n", hdr);
+  memset(big + hdr, 'a', 280);
+  memcpy(big + hdr + 280, ".x = 1\n", 7);
+  size_t line_len = 280 + 7;
+  memcpy(big + hdr + line_len, big + hdr, line_len);
+  big[hdr + (2 * line_len)] = '\0';
+  diag = load_fail(big);
+  assert(strstr(diag.message, "duplicate override") != nullptr);
+  assert(strlen(diag.message) > 256);
+}
+
+static void test_crlf(void) {
+  Config cfg = load_ok("[caps]\r\nstr = 32\r\n\r\n[naming]\r\nprefix = acme\r\n");
+  assert(cfg.str_cap == 32);
+  assert(str_eq(cfg.prefix, STR("acme")));
+  config_free(&cfg);
 }
 
 static void test_load_file(void) {
@@ -160,6 +186,7 @@ int main(void) {
   test_full();
   test_section_switching();
   test_errors();
+  test_crlf();
   test_load_file();
   return 0;
 }

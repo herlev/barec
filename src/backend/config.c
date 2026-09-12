@@ -23,8 +23,14 @@ typedef enum : u8 {
 } Section;
 
 typedef struct {
+  Section section;
+  Str key;
+} SeenKey;
+
+typedef struct {
   Config cfg;
   VEC(CapOverride) overrides;
+  VEC(SeenKey) seen;
   Section section;
   Diag *diag;
   u32 line_no;
@@ -252,7 +258,22 @@ bool config_prefix_ok(Str value) {
   return true;
 }
 
+[[nodiscard]] static bool check_key_unique(Loader *ld, Str key) {
+  for (size_t i = 0; i < ld->seen.len; i++) {
+    if (ld->seen.ptr[i].section == ld->section && str_eq(ld->seen.ptr[i].key, key)) {
+      diag_set(ld->diag, loc_of(ld, key.data), "duplicate key '%.*s' in this section", (int)key.len,
+               key.data);
+      return false;
+    }
+  }
+  VEC_PUSH(&ld->seen, ((SeenKey){.section = ld->section, .key = key}));
+  return true;
+}
+
 [[nodiscard]] static bool load_line(Loader *ld, Str line) {
+  if (line.len > 0 && line.data[line.len - 1] == '\r') {
+    line.len -= 1;
+  }
   for (size_t i = 0; i < line.len; i++) {
     if (line.data[i] == '#') {
       line.len = i;
@@ -285,11 +306,11 @@ bool config_prefix_ok(Str value) {
     diag_set(ld->diag, loc_of(ld, key.data), "key outside of a section");
     return false;
   case Section_NAMING:
-    return load_naming_key(ld, key, value);
+    return (bool)(check_key_unique(ld, key) && load_naming_key(ld, key, value));
   case Section_CODEGEN:
-    return load_codegen_key(ld, key, value);
+    return (bool)(check_key_unique(ld, key) && load_codegen_key(ld, key, value));
   case Section_CAPS:
-    return load_caps_key(ld, key, value);
+    return (bool)(check_key_unique(ld, key) && load_caps_key(ld, key, value));
   case Section_CAP_OVERRIDES:
     return load_override_key(ld, key, value);
   }
@@ -321,6 +342,7 @@ bool config_load_text(Config *cfg, const char *text, size_t len, Diag *diag) {
     pos = end + 1;
     line_no += 1;
   }
+  free(ld.seen.ptr);
   if (!ok) {
     free(ld.overrides.ptr);
     free(owned);
