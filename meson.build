@@ -10,7 +10,11 @@ project(
   ],
 )
 
-add_project_arguments('-Werror=vla', language: 'c')
+add_project_arguments(
+  '-Werror=vla',
+  '-DBAREC_VERSION="@0@"'.format(meson.project_version()),
+  language: 'c',
+)
 
 src_inc = include_directories('src')
 runtime_inc = include_directories('runtime')
@@ -56,10 +60,7 @@ barec = executable(
   ],
   include_directories: src_inc,
   link_with: barec_lib,
-  c_args: [
-    '-DBAREC_VERSION="@0@"'.format(meson.project_version()),
-    '--embed-dir=' + meson.project_source_root() / 'runtime',
-  ],
+  c_args: ['--embed-dir=' + meson.project_source_root() / 'runtime'],
   install: true,
 )
 
