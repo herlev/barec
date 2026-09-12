@@ -152,6 +152,11 @@ int cmd_generate(const Cli *cli) {
     strbuf_append(&name, cli->generate.name);
   } else {
     stem_of(cli->generate.schema_path, &name);
+    if (name.len == 0 || name.data[0] == '.') {
+      fprintf(stderr, "%s: error: cannot derive an output name from '%s', pass --name\n",
+              cli_prog_name(), cli->generate.schema_path);
+      goto done;
+    }
   }
   if (cli->generate.out_dir != nullptr) {
     strbuf_append(&out_dir, cli->generate.out_dir);

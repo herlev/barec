@@ -41,6 +41,21 @@ rm "$TMP/msg.h" "$TMP/msg.c"
 "$BAREC" generate "$TMP/msg.bare" -o "$TMP/vh" -n -h
 test -f "$TMP/vh/-h.h"
 
+if "$BAREC" generate "$TMP/msg.bare" -o "$TMP/empty" -n "" 2> /dev/null; then exit 1; fi
+test ! -f "$TMP/empty/.h"
+if "$BAREC" generate "$TMP/msg.bare" -o "" 2> "$TMP/err"; then exit 1; fi
+if grep -q "cannot write '/" "$TMP/err"; then exit 1; fi
+if "$BAREC" generate "$TMP/msg.bare" -o "$TMP/safe" -n ../escape 2> /dev/null; then exit 1; fi
+test ! -f "$TMP/escape.h"
+if "$BAREC" generate "$TMP/msg.bare" -n . 2> /dev/null; then exit 1; fi
+
+cp "$TMP/msg.bare" "$TMP/.bare"
+if "$BAREC" generate "$TMP/.bare" 2> "$TMP/err"; then exit 1; fi
+grep -q "cannot derive an output name" "$TMP/err"
+test ! -f "$TMP/.bare.h"
+"$BAREC" generate "$TMP/.bare" -n dotless
+test -f "$TMP/dotless.h"
+
 cat > "$TMP/bad.bare" << 'EOF'
 type Broken Missing
 EOF

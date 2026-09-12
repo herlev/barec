@@ -104,30 +104,44 @@ static CStd parse_std(const char *value) {
   usage_error("invalid --std '%s', expected c99 or c23", value);
 }
 
-static void validate_prefix(const char *prefix) {
+static const char *validate_name(const char *name) {
+  if (name[0] == '\0' || strchr(name, '/') != nullptr || strcmp(name, ".") == 0 ||
+      strcmp(name, "..") == 0) {
+    usage_error("invalid --name '%s', expected a non-empty filename without '/'", name);
+  }
+  return name;
+}
+
+static const char *validate_out_dir(const char *dir) {
+  if (dir[0] == '\0') {
+    usage_error("--out-dir must not be empty");
+  }
+  return dir;
+}
+
+static const char *validate_prefix(const char *prefix) {
   if (!config_prefix_ok((Str){.data = prefix, .len = strlen(prefix)})) {
     usage_error("invalid --prefix '%s', expected letters, digits, and underscores not starting "
                 "with a digit",
                 prefix);
   }
+  return prefix;
 }
 
 static void parse_generate_option(Cli *cli, int argc, char **argv, int *i) {
   const char *arg = argv[*i];
   const char *inline_value = nullptr;
   if (opt_matches(arg, "-o", "--out-dir", &inline_value)) {
-    cli->generate.out_dir = opt_value(argc, argv, i, inline_value, "--out-dir");
+    cli->generate.out_dir = validate_out_dir(opt_value(argc, argv, i, inline_value, "--out-dir"));
   } else if (opt_matches(arg, "-n", "--name", &inline_value)) {
-    cli->generate.name = opt_value(argc, argv, i, inline_value, "--name");
+    cli->generate.name = validate_name(opt_value(argc, argv, i, inline_value, "--name"));
   } else if (opt_matches(arg, "-c", "--config", &inline_value)) {
     cli->generate.config_path = opt_value(argc, argv, i, inline_value, "--config");
   } else if (opt_matches(arg, nullptr, "--std", &inline_value)) {
     cli->generate.std.value = parse_std(opt_value(argc, argv, i, inline_value, "--std"));
     cli->generate.std.has_value = true;
   } else if (opt_matches(arg, nullptr, "--prefix", &inline_value)) {
-    const char *prefix = opt_value(argc, argv, i, inline_value, "--prefix");
-    validate_prefix(prefix);
-    cli->generate.prefix = prefix;
+    cli->generate.prefix = validate_prefix(opt_value(argc, argv, i, inline_value, "--prefix"));
   } else if (strcmp(arg, "--runtime") == 0) {
     cli->generate.runtime = true;
   } else {
