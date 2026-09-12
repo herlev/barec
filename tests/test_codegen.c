@@ -153,9 +153,11 @@ static void test_prefix_and_styles(void) {
 
 static void test_keyword_escape(void) {
   Config cfg = config_default();
-  Generated gen = generate_ok("type S struct { if: u8 int: u16 }", &cfg);
+  Generated gen = generate_ok("type S struct { if: u8 int: u16 unix: u32 linux: u64 }", &cfg);
   assert(strstr(gen.header.data, "uint8_t if_;") != nullptr);
   assert(strstr(gen.header.data, "uint16_t int_;") != nullptr);
+  assert(strstr(gen.header.data, "uint32_t unix_;") != nullptr);
+  assert(strstr(gen.header.data, "uint64_t linux_;") != nullptr);
   free_generated(&gen);
 }
 

@@ -1,0 +1,4 @@
+type Host struct {
+  unix: bool
+  linux: bool
+}

@@ -10,20 +10,18 @@
 #include <stdlib.h>
 #include <string.h>
 
-static bool is_c_keyword(const char *s) {
-  static const char *const KEYWORDS[] = {
-      "alignas",      "alignof",  "auto",          "bool",      "break",
-      "case",         "char",     "const",         "constexpr", "continue",
-      "default",      "do",       "double",        "else",      "enum",
-      "extern",       "false",    "float",         "for",       "goto",
-      "if",           "inline",   "int",           "long",      "nullptr",
-      "register",     "restrict", "return",        "short",     "signed",
-      "sizeof",       "static",   "static_assert", "struct",    "switch",
-      "thread_local", "true",     "typedef",       "typeof",    "union",
-      "unsigned",     "void",     "volatile",      "while",
+static bool is_reserved_word(const char *s) {
+  static const char *const RESERVED[] = {
+      "alignas",  "alignof",   "auto",         "bool",     "break",   "case",    "char",
+      "const",    "constexpr", "continue",     "default",  "do",      "double",  "else",
+      "enum",     "extern",    "false",        "float",    "for",     "goto",    "i386",
+      "if",       "inline",    "int",          "linux",    "long",    "nullptr", "register",
+      "restrict", "return",    "short",        "signed",   "sizeof",  "static",  "static_assert",
+      "struct",   "switch",    "thread_local", "true",     "typedef", "typeof",  "union",
+      "unix",     "unsigned",  "void",         "volatile", "while",
   };
-  for (size_t i = 0; i < ARRAY_LEN(KEYWORDS); i++) {
-    if (strcmp(s, KEYWORDS[i]) == 0) {
+  for (size_t i = 0; i < ARRAY_LEN(RESERVED); i++) {
+    if (strcmp(s, RESERVED[i]) == 0) {
       return true;
     }
   }
@@ -45,7 +43,7 @@ char *codegen_render_ident(const Config *cfg, Str raw, CaseStyle style, bool wit
   if (out.data == nullptr) {
     strbuf_append(&out, "");
   }
-  if (is_c_keyword(out.data)) {
+  if (is_reserved_word(out.data)) {
     strbuf_append_char(&out, '_');
   }
   return out.data;

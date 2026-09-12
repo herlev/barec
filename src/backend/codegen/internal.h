@@ -63,7 +63,8 @@ static inline bool codegen_is_aggregate(TypeKind kind) {
 
 /// Renders a schema name or dotted path into a C identifier: optional
 /// config prefix, dots to underscores, re-cased via name_render, C keywords
-/// escaped with a trailing underscore. Returns an owned string.
+/// and gnu-mode predefined macros like unix escaped with a trailing
+/// underscore. Returns an owned string.
 char *codegen_render_ident(const Config *cfg, Str raw, CaseStyle style, bool with_prefix);
 char *codegen_render_ident_cstr(const Config *cfg, const char *raw, CaseStyle style,
                                 bool with_prefix);
