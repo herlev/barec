@@ -39,7 +39,9 @@ static void emit_derived_fns(const Gen *g, const Type *t, bool is_root) {
       codegen_emit_write_fn(g, t, codegen_name_of(g, t), false);
       codegen_emit_equal_fn(g, t, codegen_name_of(g, t), false);
       codegen_emit_skip_fn(g, t, codegen_name_of(g, t), false);
-      codegen_emit_size_fn(g, t, codegen_name_of(g, t), false);
+      if (!codegen_wire_size(g, t).fixed) {
+        codegen_emit_size_fn(g, t, codegen_name_of(g, t), false);
+      }
     }
     break;
   default:

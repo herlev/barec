@@ -1,0 +1,5 @@
+type Ping struct { seq: u32 }
+type Pong struct { seq: u32 }
+type Packet struct {
+  body: union { Ping | Pong }
+}

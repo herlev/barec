@@ -262,6 +262,14 @@ static void test_size_fns(void) {
                 "  BARE_ASSERT(false && \"a->tag is a valid UTag\");\n  return false;\n") !=
          nullptr);
   free_generated(&u);
+
+  Generated fixed_union = generate_ok("type Ping struct { seq: u32 }\n"
+                                      "type Pong struct { seq: u32 }\n"
+                                      "type Packet struct { body: union { Ping | Pong } }",
+                                      &cfg);
+  assert(strstr(fixed_union.source.data, "packet_body_size") == nullptr);
+  assert(strstr(fixed_union.source.data, "packet_body_equal") != nullptr);
+  free_generated(&fixed_union);
 }
 
 static void test_skip_fns(void) {

@@ -2,11 +2,28 @@
 set -eu
 BAREC="$1"
 RUNTIME="$2"
+DIR="$(dirname "$0")/compile"
 CC="${CC:-cc}"
 TMP="$(mktemp -d)"
 trap 'rm -rf "$TMP"' EXIT
 
 failed=0
+for schema in "$DIR"/*.bare; do
+  [ -e "$schema" ] || continue
+  name="$(basename "$schema" .bare)"
+  out="$TMP/$name"
+  conf="$DIR/$name.conf"
+  set -- generate "$schema" -o "$out" -n "$name"
+  if [ -f "$conf" ]; then
+    set -- "$@" -c "$conf"
+  fi
+  if ! "$BAREC" "$@" > "$TMP/log" 2>&1 ||
+    ! "$CC" -std=gnu23 -Wall -Wextra -Werror -I "$RUNTIME" -c "$out/$name.c" -o "$out/$name.o" >> "$TMP/log" 2>&1; then
+    echo "FAIL $name"
+    cat "$TMP/log"
+    failed=1
+  fi
+done
 
 printf 'type Msg struct { label: str }\n' > "$TMP/lit.bare"
 "$BAREC" generate "$TMP/lit.bare" -o "$TMP/lit" -n lit
