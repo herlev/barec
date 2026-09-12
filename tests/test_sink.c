@@ -285,7 +285,9 @@ static void expect_contract_abort(void (*fn)(void)) {
   pid_t pid = fork();
   assert(pid >= 0);
   if (pid == 0) {
-    (void)freopen("contract_stderr.log", "w", stderr);
+    if (freopen("contract_stderr.log", "w", stderr) == nullptr) {
+      _exit(97);
+    }
     setvbuf(stderr, NULL, _IONBF, 0);
     fn();
     _exit(0);

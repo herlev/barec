@@ -317,7 +317,9 @@ static void test_assert(void) {
   pid_t pid = fork();
   assert(pid >= 0);
   if (pid == 0) {
-    (void)freopen("/dev/null", "w", stderr);
+    if (freopen("/dev/null", "w", stderr) == nullptr) {
+      _exit(97);
+    }
     BARE_ASSERT(1 + 1 == 3);
     _exit(0);
   }
