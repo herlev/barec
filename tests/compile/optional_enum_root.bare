@@ -1,0 +1,2 @@
+type Status optional<enum { OK FAIL }>
+type Choice optional<union { u8 | str }>

@@ -147,7 +147,13 @@ void codegen_scan_type(Gen *g, const Type *t, StrBuf *path) {
     }
     break;
   case TypeKind_OPTIONAL:
-    codegen_scan_type(g, t->optional.inner, path);
+    if (codegen_is_aggregate(t->optional.inner->kind)) {
+      size_t saved = path_push(path, STR("value"));
+      codegen_scan_type(g, t->optional.inner, path);
+      path_pop(path, saved);
+    } else {
+      codegen_scan_type(g, t->optional.inner, path);
+    }
     break;
   case TypeKind_LIST: {
     if (!t->list.length.has_value) {

@@ -185,6 +185,14 @@ static void test_screaming_enum_variants(void) {
   free_generated(&gen);
 }
 
+static void test_optional_aggregate_root(void) {
+  Config cfg = config_default();
+  Generated gen = generate_ok("type Status optional<enum { OK FAIL }>", &cfg);
+  assert(strstr(gen.header.data, "} StatusValue;") != nullptr);
+  assert(strstr(gen.header.data, "  StatusValue value;\n} Status;") != nullptr);
+  free_generated(&gen);
+}
+
 static void test_type_suffix(void) {
   Config cfg = config_default();
   cfg.type_case = CaseStyle_SNAKE;
@@ -419,6 +427,7 @@ int main(void) {
   test_keyword_escape();
   test_union_primitive_members();
   test_screaming_enum_variants();
+  test_optional_aggregate_root();
   test_type_suffix();
   test_enum_name_fns();
   test_equal_fns();
