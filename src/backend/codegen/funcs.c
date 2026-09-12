@@ -91,7 +91,8 @@ static void emit_enum_name_fn(const Gen *g, const Type *t, const char *cname) {
                    v->name.data);
     free(variant);
   }
-  strbuf_append(out, "  }\n  return NULL;\n}\n\n");
+  strbuf_appendf(
+      out, "  }\n  BARE_ASSERT(false && \"value is a valid %s\");\n  return NULL;\n}\n\n", cname);
   free(fn_name);
 }
 

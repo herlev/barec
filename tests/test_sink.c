@@ -251,33 +251,6 @@ static void test_skip(void) {
   assert(row_skip(&r) == BareStatus_SHORT_READ);
 }
 
-static void test_enum_names(void) {
-  assert(strcmp(mode_name(Mode_OFF), "OFF") == 0);
-  assert(strcmp(mode_name(Mode_TURBO), "TURBO") == 0);
-  Mode bogus;
-  const uint16_t raw = 7;
-  memcpy(&bogus, &raw, sizeof(bogus));
-  assert(mode_name(bogus) == NULL);
-  assert(strcmp(huge_name(Huge_BIG), "BIG") == 0);
-}
-
-static void test_huge_constants(void) {
-  uint8_t buf[WIDE_MAX_SIZE];
-  size_t written = 0;
-  Huge h = Huge_BIG;
-  assert(huge_encode(&h, buf, sizeof(buf), &written) == BareStatus_OK);
-  Huge hout = Huge_TINY;
-  assert(huge_decode(&hout, buf, written) == BareStatus_OK);
-  assert(hout == Huge_BIG);
-
-  Wide w = {.tag = WideTag_STR, .value.str = BARE_STR64("big")};
-  assert(wide_encode(&w, buf, sizeof(buf), &written) == BareStatus_OK);
-  Wide wout = {};
-  assert(wide_decode(&wout, buf, written) == BareStatus_OK);
-  assert(wout.tag == WideTag_STR);
-  assert(BARE_STR_EQ(&wout.value.str, "big"));
-}
-
 static Packet violating;
 static Wide violating_wide;
 
@@ -288,6 +261,13 @@ static void call_equal(void) { (void)packet_equal(&violating, &violating); }
 static void call_wide_size(void) { (void)wide_size(&violating_wide); }
 
 static void call_wide_equal(void) { (void)wide_equal(&violating_wide, &violating_wide); }
+
+static void call_bogus_mode_name(void) {
+  Mode bogus;
+  const uint16_t raw = 7;
+  memcpy(&bogus, &raw, sizeof(bogus));
+  (void)mode_name(bogus);
+}
 
 static void expect_contract_abort(void (*fn)(void)) {
   pid_t pid = fork();
@@ -308,6 +288,30 @@ static void expect_contract_abort(void (*fn)(void)) {
   fclose(log);
   remove("contract_stderr.log");
   assert(strstr(msg, "BARE_ASSERT(") != nullptr);
+}
+
+static void test_enum_names(void) {
+  assert(strcmp(mode_name(Mode_OFF), "OFF") == 0);
+  assert(strcmp(mode_name(Mode_TURBO), "TURBO") == 0);
+  expect_contract_abort(call_bogus_mode_name);
+  assert(strcmp(huge_name(Huge_BIG), "BIG") == 0);
+}
+
+static void test_huge_constants(void) {
+  uint8_t buf[WIDE_MAX_SIZE];
+  size_t written = 0;
+  Huge h = Huge_BIG;
+  assert(huge_encode(&h, buf, sizeof(buf), &written) == BareStatus_OK);
+  Huge hout = Huge_TINY;
+  assert(huge_decode(&hout, buf, written) == BareStatus_OK);
+  assert(hout == Huge_BIG);
+
+  Wide w = {.tag = WideTag_STR, .value.str = BARE_STR64("big")};
+  assert(wide_encode(&w, buf, sizeof(buf), &written) == BareStatus_OK);
+  Wide wout = {};
+  assert(wide_decode(&wout, buf, written) == BareStatus_OK);
+  assert(wout.tag == WideTag_STR);
+  assert(BARE_STR_EQ(&wout.value.str, "big"));
 }
 
 static void test_contract_violations(void) {

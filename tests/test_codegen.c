@@ -213,7 +213,8 @@ static void test_enum_name_fns(void) {
   assert(strstr(gen.header.data, "const char *acme_mode_name(AcmeMode value);") != nullptr);
   assert(strstr(gen.source.data, "const char *acme_mode_name(AcmeMode value) {") != nullptr);
   assert(strstr(gen.source.data, "  case AcmeMode_TURBO:\n    return \"TURBO\";\n") != nullptr);
-  assert(strstr(gen.source.data, "  }\n  return NULL;\n}") != nullptr);
+  assert(strstr(gen.source.data, "  }\n  BARE_ASSERT(false && \"value is a valid AcmeMode\");\n"
+                                 "  return NULL;\n}") != nullptr);
   assert(strstr(gen.header.data, "acme_alias_name") == nullptr);
   assert(strstr(gen.header.data, "acme_holder_kind_name") == nullptr);
   free_generated(&gen);

@@ -166,6 +166,7 @@ const char *department_name(Department value) {
   case Department_JSMITH:
     return "JSMITH";
   }
+  BARE_ASSERT(false && "value is a valid Department");
   return NULL;
 }
 
