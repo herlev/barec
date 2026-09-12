@@ -12,20 +12,22 @@ static BareStatus server_handle(const uint8_t req_wire[], size_t req_len, uint8_
   Response res = {};
   switch (req.tag) {
   case RequestTag_PING:
-    res.tag = ResponseTag_PONG;
+    res = (Response){.tag = ResponseTag_PONG};
     break;
   case RequestTag_READ_TEMPERATURE:
-    res.tag = ResponseTag_TEMPERATURE;
-    res.value.temperature.device = req.value.read_temperature.device;
-    res.value.temperature.reading = 21.5F;
-    res.value.temperature.timestamp = 1757203200;
+    res = (Response){
+        .tag = ResponseTag_TEMPERATURE,
+        .value.temperature = {.device = req.value.read_temperature.device,
+                              .reading = 21.5F,
+                              .timestamp = 1757203200},
+    };
     break;
   case RequestTag_SET_LABEL:
     if (req.value.set_label.label.len == 0) {
-      res.tag = ResponseTag_ERROR;
+      res = (Response){.tag = ResponseTag_ERROR};
       BARE_STR_LIT(&res.value.error.message, "label must not be empty");
     } else {
-      res.tag = ResponseTag_OK;
+      res = (Response){.tag = ResponseTag_OK};
     }
     break;
   }
@@ -73,21 +75,22 @@ static int exchange(const Request *req) {
 }
 
 int main(void) {
-  Request ping = {};
-  ping.tag = RequestTag_PING;
+  Request ping = {.tag = RequestTag_PING};
 
-  Request read_temp = {};
-  read_temp.tag = RequestTag_READ_TEMPERATURE;
-  read_temp.value.read_temperature.device = 7;
+  Request read_temp = {
+      .tag = RequestTag_READ_TEMPERATURE,
+      .value.read_temperature.device = 7,
+  };
 
   Request set_label = {
       .tag = RequestTag_SET_LABEL,
       .value.set_label = {.device = 7, .label = BARE_STR64("greenhouse")},
   };
 
-  Request bad_label = {};
-  bad_label.tag = RequestTag_SET_LABEL;
-  bad_label.value.set_label.device = 7;
+  Request bad_label = {
+      .tag = RequestTag_SET_LABEL,
+      .value.set_label.device = 7,
+  };
 
   return exchange(&ping) + exchange(&read_temp) + exchange(&set_label) + exchange(&bad_label);
 }
