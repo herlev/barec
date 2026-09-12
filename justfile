@@ -16,6 +16,7 @@ install: build
     meson install -C build
 
 snapshots: build
+    ./build/barec generate tests/example.bare -o tests/golden -n example_default
     UPDATE_SNAPSHOTS=1 sh tests/snapshot.sh ./build/barec
 
 fmt:
