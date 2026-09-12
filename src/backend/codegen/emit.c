@@ -47,10 +47,17 @@ void codegen_indent(StrBuf *out, int indent) {
 }
 
 /// A trailing backslash would splice the next generated line into the
-/// comment, so it is stripped along with any whitespace before it.
+/// comment, and a trailing ??/ trigraph is a backslash in c99 mode and a
+/// -Wtrigraphs error in every mode, so both are stripped along with any
+/// whitespace before them. Dropping the slash is enough since a bare ??
+/// is not a trigraph.
 static Str doc_text(Str line) {
-  while (line.len > 0 && (line.data[line.len - 1] == '\\' || line.data[line.len - 1] == ' ' ||
-                          line.data[line.len - 1] == '\t')) {
+  while (line.len > 0) {
+    char last = line.data[line.len - 1];
+    bool trigraph = (bool)(line.len >= 3 && memcmp(line.data + line.len - 3, "?\?/", 3) == 0);
+    if (last != '\\' && last != ' ' && last != '\t' && !trigraph) {
+      break;
+    }
     line.len -= 1;
   }
   return line;

@@ -320,6 +320,12 @@ static void test_doc_comments(void) {
          nullptr);
   assert(strstr(sliced.header.data, "\\") == nullptr);
   free_generated(&sliced);
+
+  Generated trigraph = generate_ok("# is this on?\?/\ntype Flag u8 # mid ?\?( is fine\n", &cfg);
+  assert(strstr(trigraph.header.data, "/// is this on??\n/// mid ?\?( is fine\n"
+                                      "typedef uint8_t Flag;") != nullptr);
+  assert(strstr(trigraph.header.data, "?\?/") == nullptr);
+  free_generated(&trigraph);
 }
 
 static u64 hash_nth(const char *src, size_t i) {

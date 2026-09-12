@@ -1,0 +1,4 @@
+# Is this on??/
+type Flag struct {
+  on: bool
+}
