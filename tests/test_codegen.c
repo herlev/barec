@@ -78,6 +78,7 @@ static void test_function_bodies(void) {
                                  "    return BareStatus_INVALID_ENUM;") != nullptr);
   assert(strstr(gen.source.data, "*out = (E)raw;") != nullptr);
   assert(strstr(gen.source.data, "return BareStatus_INVALID_OPTIONAL;") != nullptr);
+  assert(strstr(gen.source.data, "bare_write_u8(w, value->has_value ? 1 : 0)") != nullptr);
   assert(strstr(gen.source.data, "return BareStatus_DUPLICATE_KEY;") != nullptr);
   assert(strstr(gen.source.data, "memcmp(out->entries[j0].key.data, out->entries[i0].key.data") !=
          nullptr);

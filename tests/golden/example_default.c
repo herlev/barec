@@ -463,7 +463,7 @@ BareStatus employee_write(BareWriter *w, const Employee *value) {
   BARE_TRY(address_write(w, &value->address));
   BARE_TRY(department_write(w, &value->department));
   BARE_TRY(time_write(w, &value->hire_date));
-  BARE_TRY(bare_write_u8(w, (uint8_t)value->public_key.has_value));
+  BARE_TRY(bare_write_u8(w, value->public_key.has_value ? 1 : 0));
   if (value->public_key.has_value) {
     BARE_TRY(public_key_write(w, &value->public_key.value));
   }

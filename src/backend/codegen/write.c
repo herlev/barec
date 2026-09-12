@@ -30,7 +30,7 @@ static void emit_write_optional(const Gen *g, const Type *inner, const char *has
                                 const char *value_expr, int indent, int depth) {
   StrBuf *out = g->out;
   codegen_indent(out, indent);
-  strbuf_appendf(out, "BARE_TRY(bare_write_u8(w, (uint8_t)%s));\n", has_expr);
+  strbuf_appendf(out, "BARE_TRY(bare_write_u8(w, %s ? 1 : 0));\n", has_expr);
   codegen_indent(out, indent);
   strbuf_appendf(out, "if (%s) {\n", has_expr);
   emit_write_step(g, inner, value_expr, indent + 2, depth + 1);
