@@ -35,6 +35,7 @@ static void reencode_exact(const Person *p, const uint8_t expect[], size_t expec
   size_t written = 0;
   assert(person_encode(p, buf, sizeof(buf), &written) == BareStatus_OK);
   assert(written == expect_len);
+  assert(person_size(p) == expect_len);
   assert(memcmp(buf, expect, expect_len) == 0);
 }
 

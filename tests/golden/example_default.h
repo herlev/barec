@@ -131,6 +131,7 @@ typedef struct {
 [[nodiscard]] BareStatus public_key_encode(const PublicKey *value, uint8_t buf[], size_t cap, size_t *written);
 [[nodiscard]] bool public_key_equal(const PublicKey *a, const PublicKey *b);
 [[nodiscard]] BareStatus public_key_skip(BareReader *r);
+[[nodiscard]] uint64_t public_key_size(const PublicKey *value);
 
 [[nodiscard]] BareStatus time_read(BareReader *r, Time *out);
 [[nodiscard]] BareStatus time_write(BareWriter *w, const Time *value);
@@ -138,6 +139,7 @@ typedef struct {
 [[nodiscard]] BareStatus time_encode(const Time *value, uint8_t buf[], size_t cap, size_t *written);
 [[nodiscard]] bool time_equal(const Time *a, const Time *b);
 [[nodiscard]] BareStatus time_skip(BareReader *r);
+[[nodiscard]] uint64_t time_size(const Time *value);
 
 [[nodiscard]] BareStatus department_read(BareReader *r, Department *out);
 [[nodiscard]] BareStatus department_write(BareWriter *w, const Department *value);
@@ -145,6 +147,7 @@ typedef struct {
 [[nodiscard]] BareStatus department_encode(const Department *value, uint8_t buf[], size_t cap, size_t *written);
 [[nodiscard]] bool department_equal(const Department *a, const Department *b);
 [[nodiscard]] BareStatus department_skip(BareReader *r);
+[[nodiscard]] uint64_t department_size(const Department *value);
 const char *department_name(Department value);
 
 [[nodiscard]] BareStatus address_read(BareReader *r, Address *out);
@@ -153,6 +156,7 @@ const char *department_name(Department value);
 [[nodiscard]] BareStatus address_encode(const Address *value, uint8_t buf[], size_t cap, size_t *written);
 [[nodiscard]] bool address_equal(const Address *a, const Address *b);
 [[nodiscard]] BareStatus address_skip(BareReader *r);
+[[nodiscard]] uint64_t address_size(const Address *value);
 
 [[nodiscard]] BareStatus customer_read(BareReader *r, Customer *out);
 [[nodiscard]] BareStatus customer_write(BareWriter *w, const Customer *value);
@@ -160,6 +164,7 @@ const char *department_name(Department value);
 [[nodiscard]] BareStatus customer_encode(const Customer *value, uint8_t buf[], size_t cap, size_t *written);
 [[nodiscard]] bool customer_equal(const Customer *a, const Customer *b);
 [[nodiscard]] BareStatus customer_skip(BareReader *r);
+[[nodiscard]] uint64_t customer_size(const Customer *value);
 
 [[nodiscard]] BareStatus employee_read(BareReader *r, Employee *out);
 [[nodiscard]] BareStatus employee_write(BareWriter *w, const Employee *value);
@@ -167,6 +172,7 @@ const char *department_name(Department value);
 [[nodiscard]] BareStatus employee_encode(const Employee *value, uint8_t buf[], size_t cap, size_t *written);
 [[nodiscard]] bool employee_equal(const Employee *a, const Employee *b);
 [[nodiscard]] BareStatus employee_skip(BareReader *r);
+[[nodiscard]] uint64_t employee_size(const Employee *value);
 
 [[nodiscard]] BareStatus person_read(BareReader *r, Person *out);
 [[nodiscard]] BareStatus person_write(BareWriter *w, const Person *value);
@@ -174,3 +180,4 @@ const char *department_name(Department value);
 [[nodiscard]] BareStatus person_encode(const Person *value, uint8_t buf[], size_t cap, size_t *written);
 [[nodiscard]] bool person_equal(const Person *a, const Person *b);
 [[nodiscard]] BareStatus person_skip(BareReader *r);
+[[nodiscard]] uint64_t person_size(const Person *value);

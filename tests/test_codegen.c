@@ -235,6 +235,24 @@ static void test_equal_fns(void) {
   free_generated(&gen);
 }
 
+static void test_size_fns(void) {
+  Config cfg = config_default();
+  Generated gen = generate_ok("type Pos struct { x: f32 y: f32 }\n"
+                              "type Msg struct { pos: Pos note: str n: uint }\n",
+                              &cfg);
+  assert(strstr(gen.header.data, "[[nodiscard]] uint64_t msg_size(const Msg *value);") != nullptr);
+  assert(strstr(gen.source.data, "uint64_t pos_size(const Pos *value) {\n"
+                                 "  (void)value;\n"
+                                 "  return 8;\n") != nullptr);
+  assert(strstr(gen.source.data, "uint64_t msg_size(const Msg *value) {\n"
+                                 "  uint64_t n = 0;\n"
+                                 "  n += 8;\n"
+                                 "  n += bare_uint_size(value->note.len) + value->note.len;\n"
+                                 "  n += bare_uint_size(value->n);\n"
+                                 "  return n;\n") != nullptr);
+  free_generated(&gen);
+}
+
 static void test_skip_fns(void) {
   Config cfg = config_default();
   Generated gen = generate_ok("type Pos struct { x: f32 y: f32 }\n"
@@ -386,6 +404,7 @@ int main(void) {
   test_enum_name_fns();
   test_equal_fns();
   test_skip_fns();
+  test_size_fns();
   test_doc_comments();
   test_wire_hash();
   test_size_defines();

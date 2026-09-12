@@ -100,6 +100,10 @@ BARE_NODISCARD BareStatus bare_read_str(BareReader *r, char buf[], uint32_t cap,
 BARE_NODISCARD BareStatus bare_read_data(BareReader *r, uint8_t buf[], uint32_t cap, uint32_t *len);
 BARE_NODISCARD BareStatus bare_read_data_fixed(BareReader *r, uint8_t buf[], size_t len);
 
+/// Encoded size in octets of a uint or int, without writing it.
+BARE_NODISCARD uint64_t bare_uint_size(uint64_t value);
+BARE_NODISCARD uint64_t bare_int_size(int64_t value);
+
 BARE_NODISCARD BareStatus bare_write_uint(BareWriter *w, uint64_t value);
 BARE_NODISCARD BareStatus bare_write_int(BareWriter *w, int64_t value);
 BARE_NODISCARD BareStatus bare_write_u8(BareWriter *w, uint8_t value);

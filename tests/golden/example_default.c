@@ -40,6 +40,11 @@ BareStatus public_key_skip(BareReader *r) {
   return BareStatus_OK;
 }
 
+uint64_t public_key_size(const PublicKey *value) {
+  (void)value;
+  return 128;
+}
+
 BareStatus time_read(BareReader *r, Time *out) {
   return bare_read_str(r, out->data, 64, &out->len);
 }
@@ -78,6 +83,10 @@ BareStatus time_skip(BareReader *r) {
     BARE_TRY(bare_reader_skip(r, n0));
   }
   return BareStatus_OK;
+}
+
+uint64_t time_size(const Time *value) {
+  return bare_uint_size(value->len) + value->len;
 }
 
 BareStatus department_read(BareReader *r, Department *out) {
@@ -134,6 +143,11 @@ bool department_equal(const Department *a, const Department *b) {
 BareStatus department_skip(BareReader *r) {
   BARE_TRY(bare_skip_uint(r));
   return BareStatus_OK;
+}
+
+uint64_t department_size(const Department *value) {
+  (void)value;
+  return 1;
 }
 
 const char *department_name(Department value) {
@@ -203,6 +217,14 @@ BareStatus address_skip(BareReader *r) {
     }
   }
   return BareStatus_OK;
+}
+
+uint64_t address_size(const Address *value) {
+  uint64_t n = 0;
+  for (uint64_t i0 = 0; i0 < 4; i0++) {
+    n += bare_uint_size(value->items[i0].len) + value->items[i0].len;
+  }
+  return n;
 }
 
 BareStatus customer_read(BareReader *r, Customer *out) {
@@ -363,6 +385,21 @@ BareStatus customer_skip(BareReader *r) {
     }
   }
   return BareStatus_OK;
+}
+
+uint64_t customer_size(const Customer *value) {
+  uint64_t n = 0;
+  n += bare_uint_size(value->name.len) + value->name.len;
+  n += bare_uint_size(value->email.len) + value->email.len;
+  n += address_size(&value->address);
+  n += bare_uint_size(value->orders.len);
+  n += (uint64_t)value->orders.len * 12;
+  n += bare_uint_size(value->metadata.len);
+  for (uint64_t i0 = 0; i0 < value->metadata.len; i0++) {
+    n += bare_uint_size(value->metadata.entries[i0].key.len) + value->metadata.entries[i0].key.len;
+    n += bare_uint_size(value->metadata.entries[i0].value.len) + value->metadata.entries[i0].value.len;
+  }
+  return n;
 }
 
 BareStatus employee_read(BareReader *r, Employee *out) {
@@ -532,6 +569,25 @@ BareStatus employee_skip(BareReader *r) {
   return BareStatus_OK;
 }
 
+uint64_t employee_size(const Employee *value) {
+  uint64_t n = 0;
+  n += bare_uint_size(value->name.len) + value->name.len;
+  n += bare_uint_size(value->email.len) + value->email.len;
+  n += address_size(&value->address);
+  n += 1;
+  n += time_size(&value->hire_date);
+  n += 1;
+  if (value->public_key.has_value) {
+    n += 128;
+  }
+  n += bare_uint_size(value->metadata.len);
+  for (uint64_t i0 = 0; i0 < value->metadata.len; i0++) {
+    n += bare_uint_size(value->metadata.entries[i0].key.len) + value->metadata.entries[i0].key.len;
+    n += bare_uint_size(value->metadata.entries[i0].value.len) + value->metadata.entries[i0].value.len;
+  }
+  return n;
+}
+
 BareStatus person_read(BareReader *r, Person *out) {
   uint64_t tag;
   BARE_TRY(bare_read_uint(r, &tag));
@@ -625,4 +681,22 @@ BareStatus person_skip(BareReader *r) {
     return BareStatus_INVALID_TAG;
   }
   return BareStatus_OK;
+}
+
+uint64_t person_size(const Person *value) {
+  switch (value->tag) {
+  case PersonTag_CUSTOMER: {
+    uint64_t n = 1;
+    n += customer_size(&value->value.customer);
+    return n;
+  }
+  case PersonTag_EMPLOYEE: {
+    uint64_t n = 1;
+    n += employee_size(&value->value.employee);
+    return n;
+  }
+  case PersonTag_TERMINATED_EMPLOYEE:
+    return 1;
+  }
+  return 0;
 }

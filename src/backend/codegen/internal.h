@@ -131,6 +131,11 @@ WireSize codegen_wire_size(const Gen *g, const Type *t);
 /// otherwise.
 void codegen_emit_size_define(const Gen *g, const Type *t, const char *cname);
 
+/// Emits the exact-encoded-size function for a named type. Mirrors the
+/// write pass with additions instead of writes, and collapses fixed-size
+/// subtrees to constants. An out-of-range union tag sizes as 0.
+void codegen_emit_size_fn(const Gen *g, const Type *t, const char *cname, bool is_public);
+
 /// Emits a capless structural skip function. Skips validate varints,
 /// optional markers, and union tags, but not bool, enum, or UTF-8 content.
 void codegen_emit_skip_fn(const Gen *g, const Type *t, const char *cname, bool is_public);

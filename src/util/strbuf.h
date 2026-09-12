@@ -2,6 +2,7 @@
 
 #include "util/types.h"
 
+#include <stdarg.h>
 #include <stddef.h>
 
 /// Growable string builder, data is NUL-terminated once anything has been
@@ -17,4 +18,6 @@ void strbuf_append_char(StrBuf *sb, char c);
 void strbuf_append_str(StrBuf *sb, Str s);
 [[gnu::format(printf, 2, 3)]]
 void strbuf_appendf(StrBuf *sb, const char *fmt, ...);
+[[gnu::format(printf, 2, 0)]]
+void strbuf_vappendf(StrBuf *sb, const char *fmt, va_list args);
 void strbuf_free(StrBuf *sb);

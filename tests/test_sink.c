@@ -12,6 +12,7 @@ static void roundtrip(const Packet *in, Packet *out) {
   uint8_t buf[PACKET_MAX_SIZE];
   size_t written = 0;
   assert(packet_encode(in, buf, sizeof(buf), &written) == BareStatus_OK);
+  assert(packet_size(in) == written);
   assert(packet_decode(out, buf, written) == BareStatus_OK);
 }
 

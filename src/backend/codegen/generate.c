@@ -47,6 +47,9 @@ static void emit_function_decls(Gen *g, const char *cname) {
   char *fn_skip = codegen_type_fn_name(g, cname, "skip");
   strbuf_appendf(out, "%s BareStatus %s(BareReader *r);\n", nd, fn_skip);
   free(fn_skip);
+  char *fn_size = codegen_type_fn_name(g, cname, "size");
+  strbuf_appendf(out, "%s uint64_t %s(const %s *value);\n", nd, fn_size, cname);
+  free(fn_size);
   free(fn_read);
   free(fn_write);
   free(fn_decode);

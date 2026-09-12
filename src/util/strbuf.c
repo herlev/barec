@@ -40,6 +40,11 @@ void strbuf_append_char(StrBuf *sb, char c) { strbuf_append_str(sb, (Str){.data 
 void strbuf_appendf(StrBuf *sb, const char *fmt, ...) {
   va_list args;
   va_start(args, fmt);
+  strbuf_vappendf(sb, fmt, args);
+  va_end(args);
+}
+
+void strbuf_vappendf(StrBuf *sb, const char *fmt, va_list args) {
   va_list measure;
   va_copy(measure, args);
   int n = vsnprintf(nullptr, 0, fmt, measure);
@@ -49,7 +54,6 @@ void strbuf_appendf(StrBuf *sb, const char *fmt, ...) {
   }
   reserve(sb, (size_t)n);
   vsnprintf(sb->data + sb->len, (size_t)n + 1, fmt, args);
-  va_end(args);
   sb->len += (size_t)n;
 }
 

@@ -7,9 +7,15 @@
 #include "util/strbuf.h"
 #include "util/types.h"
 
+#include "util/vec.h"
+
 #include <assert.h>
+#include <inttypes.h>
+#include <stdarg.h>
 #include <stddef.h>
 #include <stdint.h>
+#include <stdlib.h>
+#include <string.h>
 
 static u64 sat_add(u64 a, u64 b) {
   if (a > UINT64_MAX - b) {
@@ -138,6 +144,239 @@ WireSize codegen_wire_size(const Gen *g, const Type *t) {
     return codegen_wire_size(g, t->user.resolved);
   }
   UNREACHABLE();
+}
+
+static void emit_size_step(const Gen *g, const Type *t, const char *v, int indent, int depth);
+
+[[gnu::format(printf, 3, 4)]]
+static void emit_size_line(const Gen *g, int indent, const char *fmt, ...) {
+  codegen_indent(g->out, indent);
+  va_list args;
+  va_start(args, fmt);
+  strbuf_vappendf(g->out, fmt, args);
+  va_end(args);
+}
+
+static void emit_size_call(const Gen *g, const char *cname, const char *v, int indent) {
+  char *fn = codegen_type_fn_name(g, cname, "size");
+  emit_size_line(g, indent, "n += %s(&%s);\n", fn, v);
+  free(fn);
+}
+
+static void emit_size_list(const Gen *g, const Type *elem, const char *items, const char *bound,
+                           int indent, int depth) {
+  emit_size_line(g, indent, "for (uint64_t i%d = 0; i%d < %s; i%d++) {\n", depth, depth, bound,
+                 depth);
+  StrBuf elem_v = {};
+  strbuf_appendf(&elem_v, "%s[i%d]", items, depth);
+  emit_size_step(g, elem, elem_v.data, indent + 2, depth + 1);
+  strbuf_free(&elem_v);
+  emit_size_line(g, indent, "}\n");
+}
+
+static void emit_size_step(const Gen *g, const Type *t, const char *v, int indent, int depth) {
+  WireSize ws = codegen_wire_size(g, t);
+  if (ws.fixed) {
+    emit_size_line(g, indent, "n += %s;\n", codegen_u64_lit(ws.max).text);
+    return;
+  }
+  switch (t->kind) {
+  case TypeKind_UINT:
+    emit_size_line(g, indent, "n += bare_uint_size(%s);\n", v);
+    break;
+  case TypeKind_INT:
+    emit_size_line(g, indent, "n += bare_int_size(%s);\n", v);
+    break;
+  case TypeKind_ENUM:
+    emit_size_line(g, indent, "n += bare_uint_size((uint64_t)%s);\n", v);
+    break;
+  case TypeKind_STR:
+  case TypeKind_DATA:
+    emit_size_line(g, indent, "n += bare_uint_size(%s.len) + %s.len;\n", v, v);
+    break;
+  case TypeKind_USER: {
+    char *cname = codegen_render_type_name(g->cfg, t->user.name);
+    emit_size_call(g, cname, v, indent);
+    free(cname);
+    break;
+  }
+  case TypeKind_UNION:
+    emit_size_call(g, codegen_name_of(g, t), v, indent);
+    break;
+  case TypeKind_OPTIONAL: {
+    emit_size_line(g, indent, "n += 1;\n");
+    emit_size_line(g, indent, "if (%s.%s) {\n", v, g->members.has_value);
+    StrBuf inner = {};
+    strbuf_appendf(&inner, "%s.%s", v, g->members.value);
+    emit_size_step(g, t->optional.inner, inner.data, indent + 2, depth);
+    strbuf_free(&inner);
+    emit_size_line(g, indent, "}\n");
+    break;
+  }
+  case TypeKind_STRUCT:
+    for (size_t i = 0; i < t->struct_fields.len; i++) {
+      const StructField *field = &t->struct_fields.ptr[i];
+      char *fname = codegen_render_ident(g->cfg, field->name, g->cfg->field_case, false);
+      StrBuf field_v = {};
+      strbuf_appendf(&field_v, "%s.%s", v, fname);
+      emit_size_step(g, field->type, field_v.data, indent, depth);
+      strbuf_free(&field_v);
+      free(fname);
+    }
+    break;
+  case TypeKind_LIST:
+    if (t->list.length.has_value) {
+      StrBuf bound = {};
+      strbuf_appendf(&bound, "%" PRIu64, t->list.length.value);
+      emit_size_list(g, t->list.elem, v, bound.data, indent, depth);
+      strbuf_free(&bound);
+    } else {
+      WireSize elem = codegen_wire_size(g, t->list.elem);
+      emit_size_line(g, indent, "n += bare_uint_size(%s.%s);\n", v, g->members.len);
+      if (elem.fixed) {
+        emit_size_line(g, indent, "n += (uint64_t)%s.%s * %s;\n", v, g->members.len,
+                       codegen_u64_lit(elem.max).text);
+      } else {
+        StrBuf items = {};
+        StrBuf bound = {};
+        strbuf_appendf(&items, "%s.%s", v, g->members.items);
+        strbuf_appendf(&bound, "%s.%s", v, g->members.len);
+        emit_size_list(g, t->list.elem, items.data, bound.data, indent, depth);
+        strbuf_free(&items);
+        strbuf_free(&bound);
+      }
+    }
+    break;
+  case TypeKind_MAP: {
+    WireSize key = codegen_wire_size(g, t->map.key);
+    WireSize value = codegen_wire_size(g, t->map.value);
+    emit_size_line(g, indent, "n += bare_uint_size(%s.%s);\n", v, g->members.len);
+    if (key.fixed && value.fixed) {
+      emit_size_line(g, indent, "n += (uint64_t)%s.%s * %s;\n", v, g->members.len,
+                     codegen_u64_lit(sat_add(key.max, value.max)).text);
+      break;
+    }
+    emit_size_line(g, indent, "for (uint64_t i%d = 0; i%d < %s.%s; i%d++) {\n", depth, depth, v,
+                   g->members.len, depth);
+    StrBuf entry = {};
+    strbuf_appendf(&entry, "%s.%s[i%d].%s", v, g->members.entries, depth, g->members.key);
+    emit_size_step(g, t->map.key, entry.data, indent + 2, depth + 1);
+    entry.len = 0;
+    strbuf_appendf(&entry, "%s.%s[i%d].%s", v, g->members.entries, depth, g->members.value);
+    emit_size_step(g, t->map.value, entry.data, indent + 2, depth + 1);
+    strbuf_free(&entry);
+    emit_size_line(g, indent, "}\n");
+    break;
+  }
+  default:
+    UNREACHABLE();
+  }
+}
+
+static void emit_union_size_body(const Gen *g, const Type *t) {
+  StrBuf *out = g->out;
+  const char *tag_cname = codegen_tag_name_of(g, t);
+  const VEC(GenName) *bases = codegen_bases_of(g, t);
+  strbuf_appendf(out, "  switch (value->%s) {\n", g->members.tag);
+  for (size_t i = 0; i < t->union_members.len; i++) {
+    const UnionMember *m = &t->union_members.ptr[i];
+    assert(m->tag.has_value && "check_schema assigns implicit union tags");
+    u64 tag_size = uleb_len(m->tag.value);
+    char *variant = codegen_render_variant(
+        g, tag_cname, (Str){.data = bases->ptr[i], .len = strlen(bases->ptr[i])});
+    WireSize member = codegen_wire_size(g, m->type);
+    if (member.fixed) {
+      strbuf_appendf(out, "  case %s:\n    return %s;\n", variant,
+                     codegen_u64_lit(sat_add(tag_size, member.max)).text);
+      free(variant);
+      continue;
+    }
+    strbuf_appendf(out, "  case %s: {\n    uint64_t n = %s;\n", variant,
+                   codegen_u64_lit(tag_size).text);
+    free(variant);
+    char *arm = codegen_render_ident_cstr(g->cfg, bases->ptr[i], g->cfg->field_case, false);
+    StrBuf arm_v = {};
+    strbuf_appendf(&arm_v, "value->%s.%s", g->members.value, arm);
+    emit_size_step(g, m->type, arm_v.data, 4, 0);
+    strbuf_free(&arm_v);
+    free(arm);
+    strbuf_append(out, "    return n;\n  }\n");
+  }
+  strbuf_append(out, "  }\n  return 0;\n");
+}
+
+void codegen_emit_size_fn(const Gen *g, const Type *t, const char *cname, bool is_public) {
+  StrBuf *out = g->out;
+  char *fn = codegen_type_fn_name(g, cname, "size");
+  if (!is_public) {
+    strbuf_append(out, "static ");
+  }
+  strbuf_appendf(out, "uint64_t %s(const %s *value) {\n", fn, cname);
+  free(fn);
+  WireSize ws = codegen_wire_size(g, t);
+  if (ws.fixed) {
+    strbuf_appendf(out, "  (void)value;\n  return %s;\n}\n\n", codegen_u64_lit(ws.max).text);
+    return;
+  }
+  switch (t->kind) {
+  case TypeKind_USER: {
+    char *target = codegen_render_type_name(g->cfg, t->user.name);
+    char *target_fn = codegen_type_fn_name(g, target, "size");
+    strbuf_appendf(out, "  return %s(value);\n", target_fn);
+    free(target_fn);
+    free(target);
+    break;
+  }
+  case TypeKind_UNION:
+    emit_union_size_body(g, t);
+    break;
+  case TypeKind_UINT:
+    strbuf_append(out, "  return bare_uint_size(*value);\n");
+    break;
+  case TypeKind_INT:
+    strbuf_append(out, "  return bare_int_size(*value);\n");
+    break;
+  case TypeKind_ENUM:
+    strbuf_append(out, "  return bare_uint_size((uint64_t)*value);\n");
+    break;
+  case TypeKind_STR:
+  case TypeKind_DATA:
+    strbuf_append(out, "  return bare_uint_size(value->len) + value->len;\n");
+    break;
+  case TypeKind_STRUCT:
+    strbuf_append(out, "  uint64_t n = 0;\n");
+    for (size_t i = 0; i < t->struct_fields.len; i++) {
+      const StructField *field = &t->struct_fields.ptr[i];
+      char *fname = codegen_render_ident(g->cfg, field->name, g->cfg->field_case, false);
+      StrBuf field_v = {};
+      strbuf_appendf(&field_v, "value->%s", fname);
+      emit_size_step(g, field->type, field_v.data, 2, 0);
+      strbuf_free(&field_v);
+      free(fname);
+    }
+    strbuf_append(out, "  return n;\n");
+    break;
+  case TypeKind_LIST:
+    if (t->list.length.has_value) {
+      strbuf_append(out, "  uint64_t n = 0;\n");
+      StrBuf items = {};
+      StrBuf bound = {};
+      strbuf_appendf(&items, "value->%s", g->members.items);
+      strbuf_appendf(&bound, "%" PRIu64, t->list.length.value);
+      emit_size_list(g, t->list.elem, items.data, bound.data, 2, 0);
+      strbuf_free(&items);
+      strbuf_free(&bound);
+      strbuf_append(out, "  return n;\n");
+      break;
+    }
+    [[fallthrough]];
+  default:
+    strbuf_append(out, "  uint64_t n = 0;\n");
+    emit_size_step(g, t, "(*value)", 2, 0);
+    strbuf_append(out, "  return n;\n");
+    break;
+  }
+  strbuf_append(out, "}\n\n");
 }
 
 void codegen_emit_size_define(const Gen *g, const Type *t, const char *cname) {

@@ -12,6 +12,7 @@ static void check_uint(uint64_t value, const uint8_t expect[], size_t n) {
   BareWriter w = bare_writer_new(buf, sizeof(buf));
   assert(bare_write_uint(&w, value) == BareStatus_OK);
   assert(w.len == n);
+  assert(bare_uint_size(value) == n);
   assert(memcmp(buf, expect, n) == 0);
   BareReader r = bare_reader_new(expect, n);
   uint64_t out;
@@ -25,6 +26,7 @@ static void check_int(int64_t value, const uint8_t expect[], size_t n) {
   BareWriter w = bare_writer_new(buf, sizeof(buf));
   assert(bare_write_int(&w, value) == BareStatus_OK);
   assert(w.len == n);
+  assert(bare_int_size(value) == n);
   assert(memcmp(buf, expect, n) == 0);
   BareReader r = bare_reader_new(expect, n);
   int64_t out;

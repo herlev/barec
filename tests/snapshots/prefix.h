@@ -87,6 +87,7 @@ typedef struct {
 [[nodiscard]] BareStatus acme_user_id_encode(const AcmeUserId *value, uint8_t buf[], size_t cap, size_t *written);
 [[nodiscard]] bool acme_user_id_equal(const AcmeUserId *a, const AcmeUserId *b);
 [[nodiscard]] BareStatus acme_user_id_skip(BareReader *r);
+[[nodiscard]] uint64_t acme_user_id_size(const AcmeUserId *value);
 
 [[nodiscard]] BareStatus acme_color_read(BareReader *r, AcmeColor *out);
 [[nodiscard]] BareStatus acme_color_write(BareWriter *w, const AcmeColor *value);
@@ -94,6 +95,7 @@ typedef struct {
 [[nodiscard]] BareStatus acme_color_encode(const AcmeColor *value, uint8_t buf[], size_t cap, size_t *written);
 [[nodiscard]] bool acme_color_equal(const AcmeColor *a, const AcmeColor *b);
 [[nodiscard]] BareStatus acme_color_skip(BareReader *r);
+[[nodiscard]] uint64_t acme_color_size(const AcmeColor *value);
 const char *acme_color_name(AcmeColor value);
 
 [[nodiscard]] BareStatus acme_profile_read(BareReader *r, AcmeProfile *out);
@@ -102,6 +104,7 @@ const char *acme_color_name(AcmeColor value);
 [[nodiscard]] BareStatus acme_profile_encode(const AcmeProfile *value, uint8_t buf[], size_t cap, size_t *written);
 [[nodiscard]] bool acme_profile_equal(const AcmeProfile *a, const AcmeProfile *b);
 [[nodiscard]] BareStatus acme_profile_skip(BareReader *r);
+[[nodiscard]] uint64_t acme_profile_size(const AcmeProfile *value);
 
 [[nodiscard]] BareStatus acme_login_event_read(BareReader *r, AcmeLoginEvent *out);
 [[nodiscard]] BareStatus acme_login_event_write(BareWriter *w, const AcmeLoginEvent *value);
@@ -109,6 +112,7 @@ const char *acme_color_name(AcmeColor value);
 [[nodiscard]] BareStatus acme_login_event_encode(const AcmeLoginEvent *value, uint8_t buf[], size_t cap, size_t *written);
 [[nodiscard]] bool acme_login_event_equal(const AcmeLoginEvent *a, const AcmeLoginEvent *b);
 [[nodiscard]] BareStatus acme_login_event_skip(BareReader *r);
+[[nodiscard]] uint64_t acme_login_event_size(const AcmeLoginEvent *value);
 
 [[nodiscard]] BareStatus acme_event_read(BareReader *r, AcmeEvent *out);
 [[nodiscard]] BareStatus acme_event_write(BareWriter *w, const AcmeEvent *value);
@@ -116,3 +120,4 @@ const char *acme_color_name(AcmeColor value);
 [[nodiscard]] BareStatus acme_event_encode(const AcmeEvent *value, uint8_t buf[], size_t cap, size_t *written);
 [[nodiscard]] bool acme_event_equal(const AcmeEvent *a, const AcmeEvent *b);
 [[nodiscard]] BareStatus acme_event_skip(BareReader *r);
+[[nodiscard]] uint64_t acme_event_size(const AcmeEvent *value);

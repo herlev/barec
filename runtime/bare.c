@@ -101,15 +101,27 @@ BareStatus bare_read_int(BareReader *r, int64_t *out) {
   return BareStatus_OK;
 }
 
-BareStatus bare_write_int(BareWriter *w, int64_t value) {
-  uint64_t zigzag;
+static uint64_t zigzag_encode(int64_t value) {
   if (value < 0) {
-    zigzag = ((uint64_t)(-(value + 1)) * 2) + 1;
-  } else {
-    zigzag = (uint64_t)value * 2;
+    return ((uint64_t)(-(value + 1)) * 2) + 1;
   }
-  return bare_write_uint(w, zigzag);
+  return (uint64_t)value * 2;
 }
+
+BareStatus bare_write_int(BareWriter *w, int64_t value) {
+  return bare_write_uint(w, zigzag_encode(value));
+}
+
+uint64_t bare_uint_size(uint64_t value) {
+  uint64_t n = 1;
+  while (value > 0x7f) {
+    value >>= 7;
+    n += 1;
+  }
+  return n;
+}
+
+uint64_t bare_int_size(int64_t value) { return bare_uint_size(zigzag_encode(value)); }
 
 BareStatus bare_read_u8(BareReader *r, uint8_t *out) { return read_bytes(r, out, 1); }
 

@@ -90,6 +90,7 @@ BARE_NODISCARD BareStatus user_id_decode(UserId *out, const uint8_t buf[], size_
 BARE_NODISCARD BareStatus user_id_encode(const UserId *value, uint8_t buf[], size_t cap, size_t *written);
 BARE_NODISCARD bool user_id_equal(const UserId *a, const UserId *b);
 BARE_NODISCARD BareStatus user_id_skip(BareReader *r);
+BARE_NODISCARD uint64_t user_id_size(const UserId *value);
 
 BARE_NODISCARD BareStatus color_read(BareReader *r, Color *out);
 BARE_NODISCARD BareStatus color_write(BareWriter *w, const Color *value);
@@ -97,6 +98,7 @@ BARE_NODISCARD BareStatus color_decode(Color *out, const uint8_t buf[], size_t l
 BARE_NODISCARD BareStatus color_encode(const Color *value, uint8_t buf[], size_t cap, size_t *written);
 BARE_NODISCARD bool color_equal(const Color *a, const Color *b);
 BARE_NODISCARD BareStatus color_skip(BareReader *r);
+BARE_NODISCARD uint64_t color_size(const Color *value);
 const char *color_name(Color value);
 
 BARE_NODISCARD BareStatus profile_read(BareReader *r, Profile *out);
@@ -105,6 +107,7 @@ BARE_NODISCARD BareStatus profile_decode(Profile *out, const uint8_t buf[], size
 BARE_NODISCARD BareStatus profile_encode(const Profile *value, uint8_t buf[], size_t cap, size_t *written);
 BARE_NODISCARD bool profile_equal(const Profile *a, const Profile *b);
 BARE_NODISCARD BareStatus profile_skip(BareReader *r);
+BARE_NODISCARD uint64_t profile_size(const Profile *value);
 
 BARE_NODISCARD BareStatus login_event_read(BareReader *r, LoginEvent *out);
 BARE_NODISCARD BareStatus login_event_write(BareWriter *w, const LoginEvent *value);
@@ -112,6 +115,7 @@ BARE_NODISCARD BareStatus login_event_decode(LoginEvent *out, const uint8_t buf[
 BARE_NODISCARD BareStatus login_event_encode(const LoginEvent *value, uint8_t buf[], size_t cap, size_t *written);
 BARE_NODISCARD bool login_event_equal(const LoginEvent *a, const LoginEvent *b);
 BARE_NODISCARD BareStatus login_event_skip(BareReader *r);
+BARE_NODISCARD uint64_t login_event_size(const LoginEvent *value);
 
 BARE_NODISCARD BareStatus event_read(BareReader *r, Event *out);
 BARE_NODISCARD BareStatus event_write(BareWriter *w, const Event *value);
@@ -119,3 +123,4 @@ BARE_NODISCARD BareStatus event_decode(Event *out, const uint8_t buf[], size_t l
 BARE_NODISCARD BareStatus event_encode(const Event *value, uint8_t buf[], size_t cap, size_t *written);
 BARE_NODISCARD bool event_equal(const Event *a, const Event *b);
 BARE_NODISCARD BareStatus event_skip(BareReader *r);
+BARE_NODISCARD uint64_t event_size(const Event *value);

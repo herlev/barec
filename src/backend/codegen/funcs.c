@@ -39,6 +39,7 @@ static void emit_derived_fns(const Gen *g, const Type *t, bool is_root) {
       codegen_emit_write_fn(g, t, codegen_name_of(g, t), false);
       codegen_emit_equal_fn(g, t, codegen_name_of(g, t), false);
       codegen_emit_skip_fn(g, t, codegen_name_of(g, t), false);
+      codegen_emit_size_fn(g, t, codegen_name_of(g, t), false);
     }
     break;
   default:
@@ -113,6 +114,7 @@ void codegen_emit_source_content(const Gen *g, char *const root_names[], const c
     emit_encode_fn(g, root_names[i]);
     codegen_emit_equal_fn(g, ut->type, root_names[i], true);
     codegen_emit_skip_fn(g, ut->type, root_names[i], true);
+    codegen_emit_size_fn(g, ut->type, root_names[i], true);
     if (ut->type->kind == TypeKind_ENUM) {
       emit_enum_name_fn(g, ut->type, root_names[i]);
     }

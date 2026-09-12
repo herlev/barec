@@ -87,6 +87,7 @@ typedef struct {
 [[nodiscard]] BareStatus userIdEncode(const UserId *value, uint8_t buf[], size_t cap, size_t *written);
 [[nodiscard]] bool userIdEqual(const UserId *a, const UserId *b);
 [[nodiscard]] BareStatus userIdSkip(BareReader *r);
+[[nodiscard]] uint64_t userIdSize(const UserId *value);
 
 [[nodiscard]] BareStatus colorRead(BareReader *r, Color *out);
 [[nodiscard]] BareStatus colorWrite(BareWriter *w, const Color *value);
@@ -94,6 +95,7 @@ typedef struct {
 [[nodiscard]] BareStatus colorEncode(const Color *value, uint8_t buf[], size_t cap, size_t *written);
 [[nodiscard]] bool colorEqual(const Color *a, const Color *b);
 [[nodiscard]] BareStatus colorSkip(BareReader *r);
+[[nodiscard]] uint64_t colorSize(const Color *value);
 const char *colorName(Color value);
 
 [[nodiscard]] BareStatus profileRead(BareReader *r, Profile *out);
@@ -102,6 +104,7 @@ const char *colorName(Color value);
 [[nodiscard]] BareStatus profileEncode(const Profile *value, uint8_t buf[], size_t cap, size_t *written);
 [[nodiscard]] bool profileEqual(const Profile *a, const Profile *b);
 [[nodiscard]] BareStatus profileSkip(BareReader *r);
+[[nodiscard]] uint64_t profileSize(const Profile *value);
 
 [[nodiscard]] BareStatus loginEventRead(BareReader *r, LoginEvent *out);
 [[nodiscard]] BareStatus loginEventWrite(BareWriter *w, const LoginEvent *value);
@@ -109,6 +112,7 @@ const char *colorName(Color value);
 [[nodiscard]] BareStatus loginEventEncode(const LoginEvent *value, uint8_t buf[], size_t cap, size_t *written);
 [[nodiscard]] bool loginEventEqual(const LoginEvent *a, const LoginEvent *b);
 [[nodiscard]] BareStatus loginEventSkip(BareReader *r);
+[[nodiscard]] uint64_t loginEventSize(const LoginEvent *value);
 
 [[nodiscard]] BareStatus eventRead(BareReader *r, Event *out);
 [[nodiscard]] BareStatus eventWrite(BareWriter *w, const Event *value);
@@ -116,3 +120,4 @@ const char *colorName(Color value);
 [[nodiscard]] BareStatus eventEncode(const Event *value, uint8_t buf[], size_t cap, size_t *written);
 [[nodiscard]] bool eventEqual(const Event *a, const Event *b);
 [[nodiscard]] BareStatus eventSkip(BareReader *r);
+[[nodiscard]] uint64_t eventSize(const Event *value);
