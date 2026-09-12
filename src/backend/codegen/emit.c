@@ -482,8 +482,10 @@ void codegen_emit_shared_typedefs(const Gen *g) {
                    cap, cap, cap, cap);
     strbuf_appendf(out,
                    "#define BARE_STR%" PRIu32 "(lit) ((BareStr%" PRIu32
-                   "){.data = \"\" lit, .len = sizeof(lit) - 1})\n#endif\n\n",
-                   cap, cap);
+                   "){.data = \"\" lit, .len = (sizeof(struct { int "
+                   "bare_string_literal_longer_than_capacity : sizeof(lit) - 1 <= %" PRIu32
+                   " ? 1 : -1; }) * 0) + sizeof(lit) - 1})\n#endif\n\n",
+                   cap, cap, cap);
   }
   for (size_t i = 0; i < g->data_caps.len; i++) {
     u32 cap = g->data_caps.ptr[i];

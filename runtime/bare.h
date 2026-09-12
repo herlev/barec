@@ -143,8 +143,18 @@ BARE_NODISCARD bool bare_utf8_valid(const uint8_t data[], size_t len);
 /// pointer, like BARE_STR_SET. A literal longer than the field's capacity
 /// is rejected at compile time, so there is no status to check.
 #ifdef BARE_TYPEOF
+#if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L
 #define BARE_STR_LIT(field, lit)                                                                   \
-  ((void)(*(field) = (BARE_TYPEOF(*(field))){.data = "" lit, .len = sizeof(lit) - 1}))
+  do {                                                                                             \
+    _Static_assert(sizeof(lit) - 1 <= sizeof((field)->data),                                       \
+                   "string literal exceeds the field's capacity");                                 \
+    *(field) = (BARE_TYPEOF(*(field))){.data = "" lit, .len = sizeof(lit) - 1};                    \
+  } while (0)
+#else
+#define BARE_STR_LIT(field, lit)                                                                   \
+  ((void)sizeof(char[sizeof(lit) - 1 <= sizeof((field)->data) ? 1 : -1]),                          \
+   (void)(*(field) = (BARE_TYPEOF(*(field))){.data = "" lit, .len = sizeof(lit) - 1}))
+#endif
 #endif
 
 /// Copies NUL-terminated text into a cap-bounded field, CAP_EXCEEDED when

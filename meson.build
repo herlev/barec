@@ -88,6 +88,12 @@ endforeach
 
 test('cli', find_program('tests/cli.sh'), args: [barec])
 
+test(
+  'compile',
+  find_program('tests/compile.sh'),
+  args: [barec, meson.project_source_root() / 'runtime'],
+)
+
 test('snapshots', find_program('tests/snapshot.sh'), args: [barec])
 
 example_gen = custom_target(

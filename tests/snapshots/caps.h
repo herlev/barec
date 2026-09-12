@@ -12,7 +12,7 @@ typedef struct {
   char data[128] BARE_NONSTRING;
   uint32_t len;
 } BareStr128;
-#define BARE_STR128(lit) ((BareStr128){.data = "" lit, .len = sizeof(lit) - 1})
+#define BARE_STR128(lit) ((BareStr128){.data = "" lit, .len = (sizeof(struct { int bare_string_literal_longer_than_capacity : sizeof(lit) - 1 <= 128 ? 1 : -1; }) * 0) + sizeof(lit) - 1})
 #endif
 
 #ifndef BARE_DATA16_DEFINED
