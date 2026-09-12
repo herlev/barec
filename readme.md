@@ -27,6 +27,7 @@ typedef struct {
 } Reading;
 
 #define READING_MAX_SIZE 74
+#define READING_SCHEMA_HASH UINT64_C(0xa89d53711dc3dca9)
 
 [[nodiscard]] BareStatus reading_read(BareReader *r, Reading *out);
 [[nodiscard]] BareStatus reading_write(BareWriter *w, const Reading *value);
@@ -34,6 +35,7 @@ typedef struct {
 [[nodiscard]] BareStatus reading_encode(const Reading *value, uint8_t buf[], size_t cap, size_t *written);
 [[nodiscard]] bool reading_equal(const Reading *a, const Reading *b);
 [[nodiscard]] BareStatus reading_skip(BareReader *r);
+[[nodiscard]] uint64_t reading_size(const Reading *value);
 ```
 
 Compile both files with the runtime (`--runtime` writes `bare.h` and
@@ -58,8 +60,14 @@ if (out.location.has_value) {
 
 `reading_equal` compares decoded values structurally, `reading_skip`
 walks past one message without touching the caps (for framing
-concatenated streams or forwarding), and enums also get a `*_name`
-function returning the variant's name for logging.
+concatenated streams or forwarding), `reading_size` computes the exact
+encoded size of a value without encoding it, and enums also get a
+`*_name` function returning the variant's name for logging.
+
+`READING_SCHEMA_HASH` is a hash of the declared schema, covering its
+names, values, and structure. Peers can exchange it in a handshake to
+check that both sides use the same schema version. `barec hash` prints
+it for every type in a schema.
 
 `barec check` validates a schema without writing anything. A
 `barec.conf` next to the schema is picked up automatically, and flags
