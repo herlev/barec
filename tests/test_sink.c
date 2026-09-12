@@ -268,6 +268,12 @@ static void call_wide_size(void) { (void)wide_size(&violating_wide); }
 
 static void call_wide_equal(void) { (void)wide_equal(&violating_wide, &violating_wide); }
 
+static void call_encode(void) {
+  uint8_t buf[PACKET_MAX_SIZE];
+  size_t written = 0;
+  (void)packet_encode(&violating, buf, sizeof(buf), &written);
+}
+
 static void call_bogus_mode_name(void) {
   Mode bogus;
   const uint16_t raw = 7;
@@ -325,6 +331,7 @@ static void test_contract_violations(void) {
   violating.rows.len = 99;
   expect_contract_abort(call_size);
   expect_contract_abort(call_equal);
+  expect_contract_abort(call_encode);
 
   violating.rows.len = 0;
   violating.by_mode.len = 99;

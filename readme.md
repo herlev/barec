@@ -73,8 +73,9 @@ copied freely, and outlive the buffer it was decoded from.
 
 - Decoding variable-sized data like strings, lists, and maps writes
   straight into inline fixed-capacity buffers, sized by the config.
-- Anything that doesn't fit fails with `BareStatus_CAP_EXCEEDED`, on
-  decode and encode alike. Pick caps for the largest values you expect.
+- Wire data that doesn't fit fails decoding with
+  `BareStatus_CAP_EXCEEDED`. Pick caps for the largest values you
+  expect.
 - Every type gets a wire-size constant for sizing buffers: `X_SIZE`
   when the encoding has one exact length, `X_MAX_SIZE` otherwise.
 

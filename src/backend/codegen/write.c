@@ -21,14 +21,9 @@ static void emit_write_call(const Gen *g, const char *cname, const char *expr, i
   free(fn);
 }
 
-static void emit_cap_check(const Gen *g, const char *len_expr, u32 cap, int indent) {
-  StrBuf *out = g->out;
-  codegen_indent(out, indent);
-  strbuf_appendf(out, "if (%s > %" PRIu32 ") {\n", len_expr, cap);
-  codegen_indent(out, indent + 2);
-  strbuf_append(out, "return BareStatus_CAP_EXCEEDED;\n");
-  codegen_indent(out, indent);
-  strbuf_append(out, "}\n");
+static void emit_len_assert(const Gen *g, const char *len_expr, u32 cap, int indent) {
+  codegen_indent(g->out, indent);
+  strbuf_appendf(g->out, "BARE_ASSERT(%s <= %" PRIu32 ");\n", len_expr, cap);
 }
 
 static void emit_write_optional(const Gen *g, const Type *inner, const char *has_expr,
@@ -60,7 +55,7 @@ static void emit_write_list_fixed(const Gen *g, const Type *elem, const char *ar
 static void emit_write_list_var(const Gen *g, const Type *elem, const char *items_expr,
                                 const char *len_expr, u32 cap, int indent, int depth) {
   StrBuf *out = g->out;
-  emit_cap_check(g, len_expr, cap, indent);
+  emit_len_assert(g, len_expr, cap, indent);
   codegen_indent(out, indent);
   strbuf_appendf(out, "BARE_TRY(bare_write_uint(w, %s));\n", len_expr);
   codegen_indent(out, indent);
@@ -77,7 +72,7 @@ static void emit_write_map(const Gen *g, const Type *key, const Type *value,
                            const char *entries_expr, const char *len_expr, u32 cap, int indent,
                            int depth) {
   StrBuf *out = g->out;
-  emit_cap_check(g, len_expr, cap, indent);
+  emit_len_assert(g, len_expr, cap, indent);
   codegen_indent(out, indent);
   strbuf_appendf(out, "for (uint32_t i%d = 1; i%d < %s; i%d++) {\n", depth, depth, len_expr, depth);
   codegen_indent(out, indent + 2);
@@ -123,7 +118,7 @@ static void emit_write_step(const Gen *g, const Type *t, const char *expr, int i
   case TypeKind_STR: {
     StrBuf len = {};
     strbuf_appendf(&len, "%s.len", expr);
-    emit_cap_check(g, len.data, codegen_cap_of(g, t), indent);
+    emit_len_assert(g, len.data, codegen_cap_of(g, t), indent);
     strbuf_free(&len);
     codegen_indent(out, indent);
     strbuf_appendf(out, "BARE_TRY(bare_write_str(w, %s.data, %s.len));\n", expr, expr);
@@ -137,7 +132,7 @@ static void emit_write_step(const Gen *g, const Type *t, const char *expr, int i
     } else {
       StrBuf len = {};
       strbuf_appendf(&len, "%s.len", expr);
-      emit_cap_check(g, len.data, codegen_cap_of(g, t), indent);
+      emit_len_assert(g, len.data, codegen_cap_of(g, t), indent);
       strbuf_free(&len);
       codegen_indent(out, indent);
       strbuf_appendf(out, "BARE_TRY(bare_write_data(w, %s.data, %s.len));\n", expr, expr);
@@ -259,7 +254,7 @@ static void emit_write_body(const Gen *g, const Type *t) {
     break;
   }
   case TypeKind_STR:
-    emit_cap_check(g, "value->len", codegen_cap_of(g, t), 2);
+    emit_len_assert(g, "value->len", codegen_cap_of(g, t), 2);
     strbuf_append(out, "  return bare_write_str(w, value->data, value->len);\n");
     break;
   case TypeKind_DATA:
@@ -267,7 +262,7 @@ static void emit_write_body(const Gen *g, const Type *t) {
       strbuf_appendf(out, "  return bare_write_data_fixed(w, value->%s, %" PRIu64 ");\n",
                      g->members.data, t->data.length.value);
     } else {
-      emit_cap_check(g, "value->len", codegen_cap_of(g, t), 2);
+      emit_len_assert(g, "value->len", codegen_cap_of(g, t), 2);
       strbuf_append(out, "  return bare_write_data(w, value->data, value->len);\n");
     }
     break;

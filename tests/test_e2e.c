@@ -153,9 +153,6 @@ static void test_errors(void) {
   uint8_t buf[512];
   size_t written = 0;
   assert(person_encode(&dup, buf, sizeof(buf), &written) == BareStatus_DUPLICATE_KEY);
-
-  c->metadata.len = 99;
-  assert(person_encode(&dup, buf, sizeof(buf), &written) == BareStatus_CAP_EXCEEDED);
 }
 
 int main(void) {

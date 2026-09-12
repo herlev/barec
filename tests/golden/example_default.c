@@ -50,9 +50,7 @@ BareStatus time_read(BareReader *r, Time *out) {
 }
 
 BareStatus time_write(BareWriter *w, const Time *value) {
-  if (value->len > 64) {
-    return BareStatus_CAP_EXCEEDED;
-  }
+  BARE_ASSERT(value->len <= 64);
   return bare_write_str(w, value->data, value->len);
 }
 
@@ -179,9 +177,7 @@ BareStatus address_read(BareReader *r, Address *out) {
 
 BareStatus address_write(BareWriter *w, const Address *value) {
   for (uint64_t i0 = 0; i0 < 4; i0++) {
-    if (value->items[i0].len > 64) {
-      return BareStatus_CAP_EXCEEDED;
-    }
+    BARE_ASSERT(value->items[i0].len <= 64);
     BARE_TRY(bare_write_str(w, value->items[i0].data, value->items[i0].len));
   }
   return BareStatus_OK;
@@ -271,26 +267,18 @@ BareStatus customer_read(BareReader *r, Customer *out) {
 }
 
 BareStatus customer_write(BareWriter *w, const Customer *value) {
-  if (value->name.len > 64) {
-    return BareStatus_CAP_EXCEEDED;
-  }
+  BARE_ASSERT(value->name.len <= 64);
   BARE_TRY(bare_write_str(w, value->name.data, value->name.len));
-  if (value->email.len > 64) {
-    return BareStatus_CAP_EXCEEDED;
-  }
+  BARE_ASSERT(value->email.len <= 64);
   BARE_TRY(bare_write_str(w, value->email.data, value->email.len));
   BARE_TRY(address_write(w, &value->address));
-  if (value->orders.len > 8) {
-    return BareStatus_CAP_EXCEEDED;
-  }
+  BARE_ASSERT(value->orders.len <= 8);
   BARE_TRY(bare_write_uint(w, value->orders.len));
   for (uint32_t i0 = 0; i0 < value->orders.len; i0++) {
     BARE_TRY(bare_write_i64(w, value->orders.items[i0].order_id));
     BARE_TRY(bare_write_i32(w, value->orders.items[i0].quantity));
   }
-  if (value->metadata.len > 8) {
-    return BareStatus_CAP_EXCEEDED;
-  }
+  BARE_ASSERT(value->metadata.len <= 8);
   for (uint32_t i0 = 1; i0 < value->metadata.len; i0++) {
     for (uint32_t j0 = 0; j0 < i0; j0++) {
       if (value->metadata.entries[j0].key.len == value->metadata.entries[i0].key.len && memcmp(value->metadata.entries[j0].key.data, value->metadata.entries[i0].key.data, value->metadata.entries[j0].key.len) == 0) {
@@ -300,13 +288,9 @@ BareStatus customer_write(BareWriter *w, const Customer *value) {
   }
   BARE_TRY(bare_write_uint(w, value->metadata.len));
   for (uint32_t i0 = 0; i0 < value->metadata.len; i0++) {
-    if (value->metadata.entries[i0].key.len > 64) {
-      return BareStatus_CAP_EXCEEDED;
-    }
+    BARE_ASSERT(value->metadata.entries[i0].key.len <= 64);
     BARE_TRY(bare_write_str(w, value->metadata.entries[i0].key.data, value->metadata.entries[i0].key.len));
-    if (value->metadata.entries[i0].value.len > 64) {
-      return BareStatus_CAP_EXCEEDED;
-    }
+    BARE_ASSERT(value->metadata.entries[i0].value.len <= 64);
     BARE_TRY(bare_write_data(w, value->metadata.entries[i0].value.data, value->metadata.entries[i0].value.len));
   }
   return BareStatus_OK;
@@ -472,13 +456,9 @@ BareStatus employee_read(BareReader *r, Employee *out) {
 }
 
 BareStatus employee_write(BareWriter *w, const Employee *value) {
-  if (value->name.len > 64) {
-    return BareStatus_CAP_EXCEEDED;
-  }
+  BARE_ASSERT(value->name.len <= 64);
   BARE_TRY(bare_write_str(w, value->name.data, value->name.len));
-  if (value->email.len > 64) {
-    return BareStatus_CAP_EXCEEDED;
-  }
+  BARE_ASSERT(value->email.len <= 64);
   BARE_TRY(bare_write_str(w, value->email.data, value->email.len));
   BARE_TRY(address_write(w, &value->address));
   BARE_TRY(department_write(w, &value->department));
@@ -487,9 +467,7 @@ BareStatus employee_write(BareWriter *w, const Employee *value) {
   if (value->public_key.has_value) {
     BARE_TRY(public_key_write(w, &value->public_key.value));
   }
-  if (value->metadata.len > 8) {
-    return BareStatus_CAP_EXCEEDED;
-  }
+  BARE_ASSERT(value->metadata.len <= 8);
   for (uint32_t i0 = 1; i0 < value->metadata.len; i0++) {
     for (uint32_t j0 = 0; j0 < i0; j0++) {
       if (value->metadata.entries[j0].key.len == value->metadata.entries[i0].key.len && memcmp(value->metadata.entries[j0].key.data, value->metadata.entries[i0].key.data, value->metadata.entries[j0].key.len) == 0) {
@@ -499,13 +477,9 @@ BareStatus employee_write(BareWriter *w, const Employee *value) {
   }
   BARE_TRY(bare_write_uint(w, value->metadata.len));
   for (uint32_t i0 = 0; i0 < value->metadata.len; i0++) {
-    if (value->metadata.entries[i0].key.len > 64) {
-      return BareStatus_CAP_EXCEEDED;
-    }
+    BARE_ASSERT(value->metadata.entries[i0].key.len <= 64);
     BARE_TRY(bare_write_str(w, value->metadata.entries[i0].key.data, value->metadata.entries[i0].key.len));
-    if (value->metadata.entries[i0].value.len > 64) {
-      return BareStatus_CAP_EXCEEDED;
-    }
+    BARE_ASSERT(value->metadata.entries[i0].value.len <= 64);
     BARE_TRY(bare_write_data(w, value->metadata.entries[i0].value.data, value->metadata.entries[i0].value.len));
   }
   return BareStatus_OK;
